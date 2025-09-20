@@ -37,7 +37,10 @@
 <body class="p-8">
 
     <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-6">
-        <h1 class="text-3xl font-bold text-gray-800 text-center mb-2">إدارة بطاقة المشتريات</h1>
+        <div class="flex items-center justify-between mb-2">
+            <h1 class="text-3xl font-bold text-gray-800 text-center flex-grow">إدارة بطاقة المشتريات</h1>
+            <div id="userIdDisplay" class="text-sm text-gray-500 font-mono text-left"></div>
+        </div>
         
         <!-- ملخص الدورة الحالية -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 text-center font-semibold">
@@ -45,9 +48,9 @@
                 <p class="text-lg text-blue-800">ديون الدورة الشهرية</p>
                 <p id="currentCycleDebt" class="text-2xl text-blue-600 mt-1">0.00 شيكل</p>
             </div>
-            <div class="bg-red-100 p-4 rounded-lg shadow-md">
-                <p class="text-lg text-red-800">المبلغ المتاح من الراتب</p>
-                <p id="remainingBalance" class="text-2xl text-red-600 mt-1">0.00 شيكل</p>
+            <div class="bg-green-100 p-4 rounded-lg shadow-md">
+                <p class="text-lg text-green-800">المبلغ المتاح من الراتب</p>
+                <p id="remainingBalance" class="text-2xl text-green-600 mt-1">0.00 شيكل</p>
             </div>
             <div class="bg-yellow-100 p-4 rounded-lg shadow-md">
                 <p class="text-lg text-yellow-800">إجمالي الأقساط المتبقية</p>
@@ -132,7 +135,14 @@
         <!-- جدول الحركات -->
         <div>
             <h2 class="text-2xl font-semibold text-gray-700 mb-4">سجل الحركات</h2>
-            <div class="overflow-x-auto rounded-lg shadow-md">
+            <div id="transactionsLoading" class="text-center p-4">
+                <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="mt-2 text-gray-600">جاري تحميل البيانات...</p>
+            </div>
+            <div id="transactionsTableContainer" class="overflow-x-auto rounded-lg shadow-md hidden">
                 <table class="min-w-full bg-white">
                     <thead class="bg-gray-200">
                         <tr>
@@ -178,7 +188,13 @@
         </div>
     </div>
     
-    <script>
+    <script type="module">
+        // استيراد Firebase SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, deleteDoc, doc, updateDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // متغيرات عامة
         const form = document.getElementById('transactionForm');
         const typeSelect = document.getElementById('transactionType');
         const installmentMonthsGroup = document.getElementById('installmentMonthsGroup');
@@ -197,12 +213,23 @@
         const messageModal = document.getElementById('messageModal');
         const messageModalText = document.getElementById('messageModalText');
         const messageModalButton = document.getElementById('messageModalButton');
-        
-        const localStorageKey = 'financial_app_transactions';
+        const transactionsLoading = document.getElementById('transactionsLoading');
+        const transactionsTableContainer = document.getElementById('transactionsTableContainer');
+        const userIdDisplay = document.getElementById('userIdDisplay');
+
+        // ثوابت التطبيق
         const CASH_WITHDRAWAL_LIMIT = 600;
         const INSTALLMENT_COMMISSION_RATE = 0.04;
         const USD_TO_NIS_RATE = 3.75;
         
+        // متغيرات Firebase
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        let db;
+        let auth;
+        let userId = null;
+        let transactionsCollection;
         let transactions = [];
         let tempSalaryData = null;
         let lastSalaryDate = null;
@@ -230,11 +257,6 @@
         // تحويل المبلغ إلى شيكل
         function getAmountInNIS(amount, currency) {
             return currency === 'USD' ? amount * USD_TO_NIS_RATE : amount;
-        }
-
-        // دالة لحفظ الحركات في الذاكرة المحلية
-        function saveToLocalStorage() {
-            localStorage.setItem(localStorageKey, JSON.stringify(transactions));
         }
 
         // دالة لتحديث الأرصدة
@@ -269,10 +291,10 @@
             totalInstallmentDebtEl.textContent = `${totalInstallmentDebt.toFixed(2)} شيكل`;
             
             if (remaining < 0) {
-                remainingBalanceEl.parentElement.classList.remove('bg-red-100', 'bg-green-100');
+                remainingBalanceEl.parentElement.classList.remove('bg-green-100');
                 remainingBalanceEl.parentElement.classList.add('bg-red-100');
             } else {
-                remainingBalanceEl.parentElement.classList.remove('bg-red-100', 'bg-green-100');
+                remainingBalanceEl.parentElement.classList.remove('bg-red-100');
                 remainingBalanceEl.parentElement.classList.add('bg-green-100');
             }
         }
@@ -326,12 +348,15 @@
             updateBalances();
         }
 
-        // دالة لحذف حركة
-        function deleteTransaction(id) {
-            transactions = transactions.filter(t => t.id !== id);
-            saveToLocalStorage();
-            renderTransactions();
-            showMessage('تم حذف الحركة بنجاح.');
+        // دالة لحذف حركة من Firestore
+        async function deleteTransaction(id) {
+            try {
+                await deleteDoc(doc(db, `/artifacts/${appId}/users/${userId}/transactions`, id));
+                showMessage('تم حذف الحركة بنجاح.');
+            } catch (e) {
+                console.error("Error deleting document: ", e);
+                showMessage('حدث خطأ أثناء حذف الحركة. يرجى المحاولة مرة أخرى.');
+            }
         }
 
         tableBody.addEventListener('click', (e) => {
@@ -342,43 +367,50 @@
         });
         
         // إضافة الراتب وخصم الأقساط
-        function deductInstallmentsAndAddSalary(salaryData) {
-            salaryData.id = crypto.randomUUID();
-            transactions.push(salaryData);
-            
-            // Loop through a copy of the transactions array to avoid issues with modification
-            const installmentsToUpdate = transactions.filter(t => t.type === 'installment' && t.remainingMonths > 0);
+        async function deductInstallmentsAndAddSalary(salaryData) {
+            try {
+                // Add the salary payment
+                await addDoc(transactionsCollection, salaryData);
 
-            installmentsToUpdate.forEach(t => {
-                // Add a new transaction for the monthly installment payment
-                const monthlyPaymentTransaction = {
-                    id: crypto.randomUUID(),
-                    type: 'installment_payment',
-                    typeText: 'دفعة قسط',
-                    amount: t.monthlyPayment,
-                    description: `دفعة شهرية للقسط: ${t.description}`,
-                    date: salaryData.date,
-                    currency: t.currency
-                };
-                transactions.push(monthlyPaymentTransaction);
+                // Update the remaining months for existing installments
+                const installmentsToUpdate = transactions.filter(t => t.type === 'installment' && t.remainingMonths > 0);
+                
+                for (const t of installmentsToUpdate) {
+                    const monthlyPaymentTransaction = {
+                        type: 'installment_payment',
+                        typeText: 'دفعة قسط',
+                        amount: t.monthlyPayment,
+                        description: `دفعة شهرية للقسط: ${t.description}`,
+                        date: salaryData.date,
+                        currency: t.currency
+                    };
+                    await addDoc(transactionsCollection, monthlyPaymentTransaction);
 
-                // Update the original installment transaction
-                t.remainingMonths -= 1;
-                t.remainingAmount -= t.monthlyPayment;
-            });
-            
-            saveToLocalStorage();
-            renderTransactions();
-            showMessage('تم تسجيل دفع الراتب وخصم الأقساط الشهرية.');
+                    const updatedInstallment = {
+                        ...t,
+                        remainingMonths: t.remainingMonths - 1,
+                        remainingAmount: t.remainingAmount - t.monthlyPayment
+                    };
+                    delete updatedInstallment.id; // Firestore doesn't like the id field in the update
+                    await updateDoc(doc(db, `/artifacts/${appId}/users/${userId}/transactions`, t.id), updatedInstallment);
+                }
+                
+                showMessage('تم تسجيل دفع الراتب وخصم الأقساط الشهرية.');
+            } catch (e) {
+                console.error("Error adding salary and deducting installments: ", e);
+                showMessage('حدث خطأ أثناء تسجيل الراتب. يرجى المحاولة مرة أخرى.');
+            }
         }
 
         // دالة لإضافة الراتب فقط دون خصم
-        function addSalaryOnly(salaryData) {
-            salaryData.id = crypto.randomUUID();
-            transactions.push(salaryData);
-            saveToLocalStorage();
-            renderTransactions();
-            showMessage('تم تسجيل دفع الراتب دون خصم الأقساط. سيتم ترحيل الديون.');
+        async function addSalaryOnly(salaryData) {
+            try {
+                await addDoc(transactionsCollection, salaryData);
+                showMessage('تم تسجيل دفع الراتب دون خصم الأقساط. سيتم ترحيل الديون.');
+            } catch (e) {
+                console.error("Error adding salary only: ", e);
+                showMessage('حدث خطأ أثناء تسجيل الراتب. يرجى المحاولة مرة أخرى.');
+            }
         }
 
         // ربط معالجات الأحداث بأزرار مربع الحوار
@@ -424,7 +456,6 @@
             }
             
             let newTransaction = {
-                id: crypto.randomUUID(),
                 type,
                 typeText,
                 amount,
@@ -447,21 +478,27 @@
                     remainingMonths: months,
                     remainingAmount: totalInstallmentAmount
                 };
-                transactions.push(newTransaction);
-                saveToLocalStorage();
-                renderTransactions();
-                const currencySymbol = newTransaction.currency === 'USD' ? '$' : 'شيكل';
-                showMessage(`تم حساب مبلغ التقسيط الإجمالي: ${totalInstallmentAmount.toFixed(2)} ${currencySymbol}. القسط الشهري: ${monthlyPayment.toFixed(2)} ${currencySymbol}.`);
-                form.reset();
+                try {
+                    await addDoc(transactionsCollection, newTransaction);
+                    const currencySymbol = newTransaction.currency === 'USD' ? '$' : 'شيكل';
+                    showMessage(`تم حساب مبلغ التقسيط الإجمالي: ${totalInstallmentAmount.toFixed(2)} ${currencySymbol}. القسط الشهري: ${monthlyPayment.toFixed(2)} ${currencySymbol}.`);
+                    form.reset();
+                } catch (e) {
+                    console.error("Error adding document: ", e);
+                    showMessage('حدث خطأ أثناء إضافة الحركة. يرجى المحاولة مرة أخرى.');
+                }
             } else if (type === 'salary_payment') {
                 tempSalaryData = newTransaction;
                 deductionModal.classList.remove('hidden');
             } else {
-                transactions.push(newTransaction);
-                saveToLocalStorage();
-                renderTransactions();
-                showMessage(`تم إضافة الحركة بنجاح.`);
-                form.reset();
+                try {
+                    await addDoc(transactionsCollection, newTransaction);
+                    showMessage(`تم إضافة الحركة بنجاح.`);
+                    form.reset();
+                } catch (e) {
+                    console.error("Error adding document: ", e);
+                    showMessage('حدث خطأ أثناء إضافة الحركة. يرجى المحاولة مرة أخرى.');
+                }
             }
         });
 
@@ -559,9 +596,42 @@
 
         // تحميل البيانات الأولية عند تحميل الصفحة
         window.addEventListener('load', () => {
-            const storedData = localStorage.getItem(localStorageKey);
-            transactions = storedData ? JSON.parse(storedData) : [];
-            renderTransactions();
+            // تهيئة Firebase
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        userIdDisplay.textContent = `معرف المستخدم: ${userId}`;
+                        transactionsCollection = collection(db, `/artifacts/${appId}/users/${userId}/transactions`);
+                        
+                        // استخدام onSnapshot للاستماع للتغييرات في الوقت الفعلي
+                        onSnapshot(transactionsCollection, (snapshot) => {
+                            transactionsLoading.classList.add('hidden');
+                            transactionsTableContainer.classList.remove('hidden');
+                            transactions = snapshot.docs.map(doc => ({
+                                id: doc.id,
+                                ...doc.data()
+                            }));
+                            renderTransactions();
+                        });
+                    } else {
+                        // إذا لم يكن هناك مستخدم مسجل الدخول، قم بتسجيل الدخول بشكل مجهول أو باستخدام الرمز المخصص
+                        if (initialAuthToken) {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error("Failed to initialize Firebase:", e);
+                transactionsLoading.classList.add('hidden');
+                transactionsLoading.innerHTML = `<p class="text-red-600">حدث خطأ في تهيئة قاعدة البيانات. يرجى إعادة تحميل الصفحة.</p>`;
+            }
         });
     </script>
 </body>
