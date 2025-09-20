@@ -37,578 +37,332 @@
 <body class="p-8">
 
     <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-6">
-        <div class="flex items-center justify-between mb-2">
-            <h1 class="text-3xl font-bold text-gray-800 text-center flex-grow">إدارة بطاقة المشتريات</h1>
-            <div id="userIdDisplay" class="text-sm text-gray-500 font-mono text-left"></div>
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">إدارة بطاقة المشتريات</h1>
+            <p id="userIdDisplay" class="text-xs text-gray-500 bg-gray-200 py-1 px-3 rounded-full"></p>
         </div>
-        
-        <!-- ملخص الدورة الحالية -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 text-center font-semibold">
-            <div class="bg-blue-100 p-4 rounded-lg shadow-md">
-                <p class="text-lg text-blue-800">ديون الدورة الشهرية</p>
-                <p id="currentCycleDebt" class="text-2xl text-blue-600 mt-1">0.00 شيكل</p>
+
+        <!-- قسم الإحصائيات -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 text-center">
+            <div class="bg-blue-50 rounded-lg p-4 shadow">
+                <p class="text-blue-600 font-medium">الراتب المتاح</p>
+                <p id="salaryDisplay" class="text-2xl font-bold text-blue-800 mt-1">0 شيكل</p>
             </div>
-            <div class="bg-green-100 p-4 rounded-lg shadow-md">
-                <p class="text-lg text-green-800">المبلغ المتاح من الراتب</p>
-                <p id="remainingBalance" class="text-2xl text-green-600 mt-1">0.00 شيكل</p>
+            <div class="bg-red-50 rounded-lg p-4 shadow">
+                <p class="text-red-600 font-medium">ديون الدورة الحالية</p>
+                <p id="currentDebtDisplay" class="text-2xl font-bold text-red-800 mt-1">0 شيكل</p>
             </div>
-            <div class="bg-yellow-100 p-4 rounded-lg shadow-md">
-                <p class="text-lg text-yellow-800">إجمالي الأقساط المتبقية</p>
-                <p id="totalInstallmentDebt" class="text-2xl text-yellow-600 mt-1">0.00 شيكل</p>
-            </div>
-        </div>
-        
-        <!-- قسم جديد لتحليل الإنفاق باستخدام Gemini AI -->
-        <div class="bg-purple-50 p-6 rounded-xl shadow-inner mb-8">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">تحليل مالي ذكي</h2>
-            <p class="text-gray-600 mb-4">
-                احصل على ملخص شامل لأنماط إنفاقك ونصائح لتحسين ميزانيتك، كل ذلك بضغطة زر.
-            </p>
-            <button id="analyzeButton" class="w-full bg-purple-600 text-white py-3 rounded-lg font-bold hover:bg-purple-700 transition duration-300 shadow-md flex items-center justify-center space-x-2">
-                <span>تحليل الإنفاق ✨</span>
-            </button>
-            <div id="analysisResult" class="mt-4 p-4 bg-purple-100 rounded-lg hidden">
-                <p id="analysisText" class="text-gray-800 leading-relaxed"></p>
-                <div id="loadingIndicator" class="mt-2 text-center hidden">
-                    <p class="text-purple-600 flex items-center justify-center space-x-2">
-                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        يتم تحليل بياناتك...
-                    </p>
-                </div>
+            <div class="bg-green-50 rounded-lg p-4 shadow">
+                <p class="text-green-600 font-medium">إجمالي الأقساط المتبقية</p>
+                <p id="totalInstallmentsDisplay" class="text-2xl font-bold text-green-800 mt-1">0 شيكل</p>
             </div>
         </div>
 
-        <!-- إضافة حركة جديدة -->
-        <div class="bg-gray-50 p-6 rounded-xl shadow-inner mb-8">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">إضافة حركة جديدة</h2>
-            <form id="transactionForm" class="space-y-4">
+        <!-- قسم إضافة حركة -->
+        <form id="transactionForm" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 bg-gray-100 p-4 rounded-lg">
+            <div class="md:col-span-1">
+                <label for="transactionType" class="block text-gray-700 font-semibold mb-2">نوع الحركة</label>
+                <select id="transactionType" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="purchase">شراء</option>
+                    <option value="cashWithdrawal">سحب نقدي</option>
+                </select>
+            </div>
+            <div class="md:col-span-1">
+                <label for="amountInput" class="block text-gray-700 font-semibold mb-2">المبلغ (بالشيكل)</label>
+                <input type="number" id="amountInput" step="0.01" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="المبلغ">
+            </div>
+            <div class="md:col-span-1">
+                <label for="descriptionInput" class="block text-gray-700 font-semibold mb-2">الوصف</label>
+                <input type="text" id="descriptionInput" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="وصف الحركة">
+            </div>
+            
+            <div class="md:col-span-3 flex items-center gap-2">
+                <input type="checkbox" id="installmentCheckbox" class="form-checkbox h-5 w-5 text-blue-600 rounded-md">
+                <label for="installmentCheckbox" class="text-gray-700 font-semibold">هل هذه الحركة قسط؟</label>
+            </div>
+
+            <div id="installmentDetails" class="hidden md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label for="transactionType" class="block text-gray-700 font-medium mb-1">نوع الحركة</label>
-                    <select id="transactionType" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="purchase">شراء</option>
-                        <option value="online_purchase">شراء عبر الإنترنت</option>
-                        <option value="cash_withdrawal">سحب نقدي (حد 600 شيكل)</option>
-                        <option value="installment">تقسيط</option>
-                        <option value="salary_payment">دفع راتب</option>
-                    </select>
-                </div>
-                <div id="installmentMonthsGroup" class="hidden">
-                    <label for="installmentMonths" class="block text-gray-700 font-medium mb-1">مدة التقسيط (بالأشهر)</label>
-                    <select id="installmentMonths" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="6">6 أشهر</option>
-                        <option value="12">12 شهر (1 سنة)</option>
-                        <option value="18">18 شهر</option>
-                        <option value="24">24 شهر (2 سنة)</option>
-                        <option value="36">36 شهر (3 سنوات)</option>
-                        <option value="48">48 شهر (4 سنوات)</option>
-                        <option value="60">60 شهر (5 سنوات)</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="transactionAmount" class="block text-gray-700 font-medium mb-1">المبلغ</label>
-                    <div class="flex gap-2">
-                        <input type="number" id="transactionAmount" step="0.01" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <select id="currencyType" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="USD">دولار</option>
-                            <option value="NIS">شيكل</option>
-                        </select>
-                    </div>
+                    <label for="installmentAmountInput" class="block text-gray-700 font-semibold mb-2">مبلغ القسط الشهري (بالشيكل)</label>
+                    <input type="number" id="installmentAmountInput" step="0.01" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="مبلغ القسط">
                 </div>
                 <div>
-                    <label for="transactionDate" class="block text-gray-700 font-medium mb-1">تاريخ الحركة</label>
-                    <input type="date" id="transactionDate" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label for="remainingInstallmentsInput" class="block text-gray-700 font-semibold mb-2">عدد الأقساط المتبقية</label>
+                    <input type="number" id="remainingInstallmentsInput" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="عدد الأقساط">
                 </div>
-                <div>
-                    <label for="transactionDescription" class="block text-gray-700 font-medium mb-1">الوصف</label>
-                    <input type="text" id="transactionDescription" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition duration-300 shadow-md">
+            </div>
+
+            <div class="md:col-span-3 flex justify-end">
+                <button type="submit" class="bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 transition duration-300">
                     إضافة حركة
                 </button>
+            </div>
+        </form>
+
+        <!-- قسم إضافة راتب -->
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">إضافة راتب</h2>
+            <form id="salaryForm" class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-green-100 p-4 rounded-lg">
+                <div>
+                    <label for="salaryInput" class="block text-gray-700 font-semibold mb-2">مبلغ الراتب (بالشيكل)</label>
+                    <input type="number" id="salaryInput" step="0.01" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="مبلغ الراتب">
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="w-full bg-green-600 text-white p-3 rounded-lg font-bold hover:bg-green-700 transition duration-300">
+                        سجل الراتب
+                    </button>
+                </div>
             </form>
-            <div id="messageBox" class="mt-4 p-3 rounded-lg hidden"></div>
         </div>
 
-        <!-- جدول الحركات -->
-        <div>
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">سجل الحركات</h2>
-            <div id="transactionsLoading" class="text-center p-4">
-                <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <p class="mt-2 text-gray-600">جاري تحميل البيانات...</p>
-            </div>
-            <div id="transactionsTableContainer" class="overflow-x-auto rounded-lg shadow-md hidden">
-                <table class="min-w-full bg-white">
-                    <thead class="bg-gray-200">
-                        <tr>
-                            <th class="py-3 px-6 text-gray-700 font-bold uppercase tracking-wider">النوع</th>
-                            <th class="py-3 px-6 text-gray-700 font-bold uppercase tracking-wider">الوصف</th>
-                            <th class="py-3 px-6 text-gray-700 font-bold uppercase tracking-wider">المبلغ</th>
-                            <th class="py-3 px-6 text-gray-700 font-bold uppercase tracking-wider">التاريخ</th>
-                            <th class="py-3 px-6 text-gray-700 font-bold uppercase tracking-wider"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="transactionTableBody" class="divide-y divide-gray-200">
-                        <!-- سيتم إضافة الحركات هنا بواسطة JavaScript -->
-                    </tbody>
-                </table>
-            </div>
+        <!-- قسم العمليات -->
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">العمليات</h2>
+        <div id="transactionsLoading" class="text-center p-4">
+            <p class="text-gray-600">جاري تحميل العمليات...</p>
         </div>
+        <div id="transactionsTableContainer" class="overflow-x-auto hidden">
+            <table class="min-w-full divide-y divide-gray-200 rounded-lg overflow-hidden shadow">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">النوع</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">المبلغ (شيكل)</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الوصف</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">تاريخ</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="transactionsTableBody" class="bg-white divide-y divide-gray-200">
+                    <!-- يتم عرض الحركات هنا -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- رسائل المستخدم -->
+        <div id="messageContainer" class="fixed top-4 right-4 z-50"></div>
     </div>
 
-    <!-- نافذة تأكيد خصم الأقساط (Modal) -->
-    <div id="deductionModal" class="modal-overlay hidden">
-        <div class="bg-white p-8 rounded-lg shadow-2xl text-center max-w-sm mx-auto">
-            <h3 class="text-xl font-bold mb-4">هل تم خصم الأقساط من راتبك؟</h3>
-            <p class="text-gray-700 mb-6">
-                إذا كانت الأقساط قد خُصمت، سنقوم بتحديث سجلاتك. إذا لم تكن قد خُصمت، سيتم ترحيل الديون للدورة القادمة.
-            </p>
-            <div class="flex justify-center gap-4">
-                <button id="yesButton" class="bg-green-600 text-white py-2 px-6 rounded-lg font-bold hover:bg-green-700 transition duration-300">
-                    نعم
-                </button>
-                <button id="noButton" class="bg-red-600 text-white py-2 px-6 rounded-lg font-bold hover:bg-red-700 transition duration-300">
-                    لا
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div id="messageModal" class="modal-overlay hidden">
-        <div class="bg-white p-6 rounded-lg shadow-2xl text-center max-w-xs mx-auto">
-            <p id="messageModalText" class="text-gray-800 text-lg mb-4"></p>
-            <button id="messageModalButton" class="bg-blue-600 text-white py-2 px-6 rounded-lg font-bold hover:bg-blue-700 transition duration-300">
-                موافق
-            </button>
-        </div>
-    </div>
-    
+    <!-- Firebase SDKs -->
     <script type="module">
-        // استيراد Firebase SDKs
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, deleteDoc, doc, updateDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // متغيرات عامة
-        const form = document.getElementById('transactionForm');
-        const typeSelect = document.getElementById('transactionType');
-        const installmentMonthsGroup = document.getElementById('installmentMonthsGroup');
-        const installmentMonthsSelect = document.getElementById('installmentMonths');
-        const tableBody = document.getElementById('transactionTableBody');
-        const currentCycleDebtEl = document.getElementById('currentCycleDebt');
-        const remainingBalanceEl = document.getElementById('remainingBalance');
-        const totalInstallmentDebtEl = document.getElementById('totalInstallmentDebt');
-        const deductionModal = document.getElementById('deductionModal');
-        const yesButton = document.getElementById('yesButton');
-        const noButton = document.getElementById('noButton');
-        const analyzeButton = document.getElementById('analyzeButton');
-        const analysisResult = document.getElementById('analysisResult');
-        const analysisText = document.getElementById('analysisText');
-        const loadingIndicator = document.getElementById('loadingIndicator');
-        const messageModal = document.getElementById('messageModal');
-        const messageModalText = document.getElementById('messageModalText');
-        const messageModalButton = document.getElementById('messageModalButton');
+        // Global variables provided by the Canvas environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // UI Elements
+        const salaryDisplay = document.getElementById('salaryDisplay');
+        const currentDebtDisplay = document.getElementById('currentDebtDisplay');
+        const totalInstallmentsDisplay = document.getElementById('totalInstallmentsDisplay');
+        const transactionForm = document.getElementById('transactionForm');
+        const transactionTypeSelect = document.getElementById('transactionType');
+        const amountInput = document.getElementById('amountInput');
+        const descriptionInput = document.getElementById('descriptionInput');
+        const installmentCheckbox = document.getElementById('installmentCheckbox');
+        const installmentDetailsDiv = document.getElementById('installmentDetails');
+        const installmentAmountInput = document.getElementById('installmentAmountInput');
+        const remainingInstallmentsInput = document.getElementById('remainingInstallmentsInput');
+        const salaryForm = document.getElementById('salaryForm');
+        const salaryInput = document.getElementById('salaryInput');
+        const transactionsTableBody = document.getElementById('transactionsTableBody');
+        const userIdDisplay = document.getElementById('userIdDisplay');
         const transactionsLoading = document.getElementById('transactionsLoading');
         const transactionsTableContainer = document.getElementById('transactionsTableContainer');
-        const userIdDisplay = document.getElementById('userIdDisplay');
+        const messageContainer = document.getElementById('messageContainer');
 
-        // ثوابت التطبيق
-        const CASH_WITHDRAWAL_LIMIT = 600;
-        const INSTALLMENT_COMMISSION_RATE = 0.04;
-        const USD_TO_NIS_RATE = 3.75;
-        
-        // متغيرات Firebase
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        let db;
-        let auth;
-        let userId = null;
-        let transactionsCollection;
         let transactions = [];
-        let tempSalaryData = null;
-        let lastSalaryDate = null;
+        let userId = '';
+        let appState = {};
+        let transactionsCollection;
+        let appStateDoc;
 
-        // دالة لإظهار مربع الحوار المخصص
-        function showMessage(message) {
-            messageModalText.textContent = message;
-            messageModal.classList.remove('hidden');
-        }
+        // Event Listeners
+        transactionForm.addEventListener('submit', handleTransactionFormSubmit);
+        salaryForm.addEventListener('submit', handleSalaryFormSubmit);
+        installmentCheckbox.addEventListener('change', handleInstallmentCheckboxChange);
 
-        // إغلاق مربع الحوار عند النقر على "موافق"
-        messageModalButton.onclick = () => {
-            messageModal.classList.add('hidden');
-        };
-
-        // إظهار/إخفاء حقل مدة التقسيط
-        typeSelect.addEventListener('change', () => {
-            if (typeSelect.value === 'installment') {
-                installmentMonthsGroup.classList.remove('hidden');
+        function showMessage(message, type = 'info') {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `p-4 rounded-lg shadow-md mb-2 max-w-sm transition-opacity duration-300`;
+            if (type === 'success') {
+                messageDiv.classList.add('bg-green-100', 'text-green-800');
+            } else if (type === 'error') {
+                messageDiv.classList.add('bg-red-100', 'text-red-800');
             } else {
-                installmentMonthsGroup.classList.add('hidden');
+                messageDiv.classList.add('bg-blue-100', 'text-blue-800');
             }
-        });
-
-        // تحويل المبلغ إلى شيكل
-        function getAmountInNIS(amount, currency) {
-            return currency === 'USD' ? amount * USD_TO_NIS_RATE : amount;
+            messageDiv.innerHTML = `<p>${message}</p>`;
+            messageContainer.appendChild(messageDiv);
+            setTimeout(() => {
+                messageDiv.classList.add('opacity-0');
+                setTimeout(() => messageDiv.remove(), 300);
+            }, 3000);
         }
-
-        // دالة لتحديث الأرصدة
-        function updateBalances() {
-            let cycleDebt = 0;
-            let salaryReceived = 0;
-            let totalInstallmentDebt = 0;
-            
-            const salaryPayments = transactions.filter(t => t.type === 'salary_payment').sort((a,b) => new Date(b.date) - new Date(a.date));
-            lastSalaryDate = salaryPayments.length > 0 ? new Date(salaryPayments[0].date) : null;
-            
-            transactions.forEach(t => {
-                if (t.type === 'salary_payment') {
-                    salaryReceived += getAmountInNIS(t.amount, t.currency);
-                } else if (t.type === 'installment' && t.remainingMonths > 0) {
-                    totalInstallmentDebt += getAmountInNIS(t.remainingAmount, t.currency);
-                } else if (['purchase', 'online_purchase', 'cash_withdrawal'].includes(t.type)) {
-                    if (!lastSalaryDate || new Date(t.date) > lastSalaryDate) {
-                        cycleDebt += getAmountInNIS(t.amount, t.currency);
-                    }
-                } else if (t.type === 'installment_payment') {
-                     if (!lastSalaryDate || new Date(t.date) > lastSalaryDate) {
-                        cycleDebt += getAmountInNIS(t.amount, t.currency);
-                    }
-                }
-            });
-            
-            const remaining = salaryReceived - cycleDebt;
-            
-            currentCycleDebtEl.textContent = `${cycleDebt.toFixed(2)} شيكل`;
-            remainingBalanceEl.textContent = `${remaining.toFixed(2)} شيكل`;
-            totalInstallmentDebtEl.textContent = `${totalInstallmentDebt.toFixed(2)} شيكل`;
-            
-            if (remaining < 0) {
-                remainingBalanceEl.parentElement.classList.remove('bg-green-100');
-                remainingBalanceEl.parentElement.classList.add('bg-red-100');
-            } else {
-                remainingBalanceEl.parentElement.classList.remove('bg-red-100');
-                remainingBalanceEl.parentElement.classList.add('bg-green-100');
-            }
-        }
-
-        // دالة لعرض جميع الحركات في الجدول
+        
+        // Render transactions to the table
         function renderTransactions() {
-            tableBody.innerHTML = '';
-            transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-            
-            transactions.forEach((t) => {
+            transactionsTableBody.innerHTML = '';
+            transactions.sort((a, b) => b.timestamp - a.timestamp); // Sort by timestamp descending
+            transactions.forEach(transaction => {
                 const row = document.createElement('tr');
-                const isDebt = ['purchase', 'online_purchase', 'cash_withdrawal', 'installment', 'installment_payment'].includes(t.type);
-                const isCredit = ['salary_payment'].includes(t.type);
-                const amountClass = isDebt ? 'text-red-600' : 'text-green-600';
-                const currencySymbol = t.currency === 'USD' ? '$' : 'شيكل';
-                
-                row.className = `text-gray-700 hover:bg-gray-100 transition-colors duration-200`;
-                
-                let descriptionText = t.description;
-                let displayAmount;
-
-                if (t.type === 'installment' && t.monthlyPayment) {
-                    descriptionText += ` (قسط شهري: ${t.monthlyPayment.toFixed(2)} ${currencySymbol})`;
-                    displayAmount = t.amount;
-                } else {
-                    displayAmount = t.amount;
-                }
-                
-                let sign = '';
-                if (isDebt) {
-                    sign = '-';
-                } else if (isCredit) {
-                    sign = '+';
+                const isInstallment = transaction.installmentDetails && transaction.installmentDetails.remainingInstallments > 0;
+                let typeText = '';
+                if (transaction.type === 'purchase') {
+                    typeText = 'شراء';
+                } else if (transaction.type === 'cashWithdrawal') {
+                    typeText = 'سحب نقدي';
+                } else if (transaction.type === 'installment') {
+                    typeText = 'قسط';
                 }
 
                 row.innerHTML = `
-                    <td class="py-3 px-6 text-sm whitespace-nowrap">${t.typeText}</td>
-                    <td class="py-3 px-6 text-sm whitespace-nowrap">${descriptionText}</td>
-                    <td class="py-3 px-6 text-sm whitespace-nowrap ${amountClass}">
-                        ${sign}${Math.abs(displayAmount).toFixed(2)} ${currencySymbol}
-                    </td>
-                    <td class="py-3 px-6 text-sm whitespace-nowrap">${new Date(t.date).toLocaleDateString('ar-SY')}</td>
-                    <td class="py-3 px-6 text-sm whitespace-nowrap">
-                        <button class="text-red-500 hover:text-red-700 transition duration-300" data-doc-id="${t.id}">
-                            حذف
-                        </button>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${typeText}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${transaction.type === 'cashWithdrawal' || transaction.type === 'purchase' ? 'text-red-600' : 'text-gray-900'}">${transaction.amount.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${transaction.description}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(transaction.timestamp).toLocaleDateString()}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button class="text-red-600 hover:text-red-900 delete-btn" data-id="${transaction.id}">حذف</button>
                     </td>
                 `;
-                tableBody.appendChild(row);
+                transactionsTableBody.appendChild(row);
             });
-            updateBalances();
-        }
-
-        // دالة لحذف حركة من Firestore
-        async function deleteTransaction(id) {
-            try {
-                await deleteDoc(doc(db, `/artifacts/${appId}/users/${userId}/transactions`, id));
-                showMessage('تم حذف الحركة بنجاح.');
-            } catch (e) {
-                console.error("Error deleting document: ", e);
-                showMessage('حدث خطأ أثناء حذف الحركة. يرجى المحاولة مرة أخرى.');
-            }
-        }
-
-        tableBody.addEventListener('click', (e) => {
-            const button = e.target.closest('button');
-            if (button && button.dataset.docId) {
-                deleteTransaction(button.dataset.docId);
-            }
-        });
-        
-        // إضافة الراتب وخصم الأقساط
-        async function deductInstallmentsAndAddSalary(salaryData) {
-            try {
-                // Add the salary payment
-                await addDoc(transactionsCollection, salaryData);
-
-                // Update the remaining months for existing installments
-                const installmentsToUpdate = transactions.filter(t => t.type === 'installment' && t.remainingMonths > 0);
-                
-                for (const t of installmentsToUpdate) {
-                    const monthlyPaymentTransaction = {
-                        type: 'installment_payment',
-                        typeText: 'دفعة قسط',
-                        amount: t.monthlyPayment,
-                        description: `دفعة شهرية للقسط: ${t.description}`,
-                        date: salaryData.date,
-                        currency: t.currency
-                    };
-                    await addDoc(transactionsCollection, monthlyPaymentTransaction);
-
-                    const updatedInstallment = {
-                        ...t,
-                        remainingMonths: t.remainingMonths - 1,
-                        remainingAmount: t.remainingAmount - t.monthlyPayment
-                    };
-                    delete updatedInstallment.id; // Firestore doesn't like the id field in the update
-                    await updateDoc(doc(db, `/artifacts/${appId}/users/${userId}/transactions`, t.id), updatedInstallment);
-                }
-                
-                showMessage('تم تسجيل دفع الراتب وخصم الأقساط الشهرية.');
-            } catch (e) {
-                console.error("Error adding salary and deducting installments: ", e);
-                showMessage('حدث خطأ أثناء تسجيل الراتب. يرجى المحاولة مرة أخرى.');
-            }
-        }
-
-        // دالة لإضافة الراتب فقط دون خصم
-        async function addSalaryOnly(salaryData) {
-            try {
-                await addDoc(transactionsCollection, salaryData);
-                showMessage('تم تسجيل دفع الراتب دون خصم الأقساط. سيتم ترحيل الديون.');
-            } catch (e) {
-                console.error("Error adding salary only: ", e);
-                showMessage('حدث خطأ أثناء تسجيل الراتب. يرجى المحاولة مرة أخرى.');
-            }
-        }
-
-        // ربط معالجات الأحداث بأزرار مربع الحوار
-        yesButton.addEventListener('click', () => {
-            deductionModal.classList.add('hidden');
-            if(tempSalaryData) {
-                deductInstallmentsAndAddSalary(tempSalaryData);
-                tempSalaryData = null;
-                form.reset();
-            }
-        });
-
-        noButton.addEventListener('click', () => {
-            deductionModal.classList.add('hidden');
-            if(tempSalaryData) {
-                addSalaryOnly(tempSalaryData);
-                tempSalaryData = null;
-                form.reset();
-            }
-        });
-
-        // معالج حدث لإضافة حركة جديدة
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const amountInput = document.getElementById('transactionAmount');
-            const descInput = document.getElementById('transactionDescription');
-            const type = typeSelect.value;
-            const currency = document.getElementById('currencyType').value;
-            let amount = parseFloat(amountInput.value);
-            const description = descInput.value.trim();
-            const typeText = typeSelect.options[typeSelect.selectedIndex].text;
-            const transactionDate = document.getElementById('transactionDate').value || new Date().toISOString().substring(0, 10);
-            
-            if (isNaN(amount) || amount <= 0) {
-                showMessage('يرجى إدخال مبلغ صحيح وموجب.');
-                return;
-            }
-
-            if (type === 'cash_withdrawal' && getAmountInNIS(amount, currency) > CASH_WITHDRAWAL_LIMIT) {
-                showMessage(`لا يمكن سحب أكثر من ${CASH_WITHDRAWAL_LIMIT} شيكل نقداً.`);
-                return;
-            }
-            
-            let newTransaction = {
-                type,
-                typeText,
-                amount,
-                description,
-                date: transactionDate,
-                currency
-            };
-            
-            if (type === 'installment') {
-                const months = parseInt(installmentMonthsSelect.value, 10);
-                const totalCommission = amount * INSTALLMENT_COMMISSION_RATE;
-                const totalInstallmentAmount = amount + totalCommission;
-                const monthlyPayment = totalInstallmentAmount / months;
-                
-                newTransaction = {
-                    ...newTransaction,
-                    totalInstallmentAmount: totalInstallmentAmount,
-                    totalInstallmentMonths: months,
-                    monthlyPayment: monthlyPayment,
-                    remainingMonths: months,
-                    remainingAmount: totalInstallmentAmount
-                };
-                try {
-                    await addDoc(transactionsCollection, newTransaction);
-                    const currencySymbol = newTransaction.currency === 'USD' ? '$' : 'شيكل';
-                    showMessage(`تم حساب مبلغ التقسيط الإجمالي: ${totalInstallmentAmount.toFixed(2)} ${currencySymbol}. القسط الشهري: ${monthlyPayment.toFixed(2)} ${currencySymbol}.`);
-                    form.reset();
-                } catch (e) {
-                    console.error("Error adding document: ", e);
-                    showMessage('حدث خطأ أثناء إضافة الحركة. يرجى المحاولة مرة أخرى.');
-                }
-            } else if (type === 'salary_payment') {
-                tempSalaryData = newTransaction;
-                deductionModal.classList.remove('hidden');
-            } else {
-                try {
-                    await addDoc(transactionsCollection, newTransaction);
-                    showMessage(`تم إضافة الحركة بنجاح.`);
-                    form.reset();
-                } catch (e) {
-                    console.error("Error adding document: ", e);
-                    showMessage('حدث خطأ أثناء إضافة الحركة. يرجى المحاولة مرة أخرى.');
-                }
-            }
-        });
-
-        // دالة للاتصال بـ Gemini لتحليل الإنفاق
-        async function analyzeSpendingWithGemini() {
-            analysisResult.classList.remove('hidden');
-            analysisText.textContent = '';
-            loadingIndicator.classList.remove('hidden');
-
-            const currentCycleTransactions = transactions.filter(t => !lastSalaryDate || new Date(t.date) > lastSalaryDate);
-
-            if (currentCycleTransactions.length === 0) {
-                analysisText.textContent = 'لا توجد حركات في الدورة الحالية للتحليل.';
-                loadingIndicator.classList.add('hidden');
-                return;
-            }
-
-            const transactionDetails = currentCycleTransactions.map(t => {
-                let text = `- ${t.typeText}: ${t.description} (مبلغ: ${t.amount.toFixed(2)} ${t.currency}, تاريخ: ${new Date(t.date).toLocaleDateString('ar-SY')})`;
-                if (t.type === 'installment') {
-                     text += ` - تقسيط: ${t.monthlyPayment.toFixed(2)} ${t.currency} شهرياً.`;
-                }
-                return text;
-            }).join('\n');
-
-            const prompt = `
-            أنا أقوم بإدارة بطاقة مشترياتي، وهذه حركات الدورة المالية الحالية:
-            
-            ${transactionDetails}
-
-            بصفتك مستشاراً مالياً خبيراً، قدم لي تحليلًا موجزًا وشاملًا لأنماط إنفاقي. أجب باللغة العربية. يجب أن يتضمن التحليل ما يلي:
-            1.  تحديد أبرز ثلاثة مجالات للإنفاق (استنادًا إلى "الوصف").
-            2.  تقديم نصيحة واحدة قابلة للتنفيذ لتحسين ميزانيتي.
-            3.  تقييم عام لحالتي المالية (مثلاً: "جيدة"، "بحاجة إلى تحسين"، "ممتازة").
-            
-            اجعل الإجابة في فقرة واحدة فقط.`;
-            
-            const payload = {
-                contents: [{ parts: [{ text: prompt }] }],
-                tools: [{ "google_search": {} }],
-                systemInstruction: {
-                    parts: [{ text: "أنت محلل مالي خبير. قدم تحليلًا موجزًا ومباشرًا. يجب أن تكون إجابتك في فقرة واحدة فقط." }]
-                },
-            };
-            
-            const apiKey = "";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-
-            try {
-                let response = null;
-                const maxRetries = 3;
-                let retryCount = 0;
-                while (retryCount < maxRetries) {
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    const transactionId = e.target.dataset.id;
                     try {
-                        response = await fetch(apiUrl, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
-                        if (response.status !== 429) {
-                            break;
-                        }
-                        await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
-                        retryCount++;
-                    } catch (error) {
-                        console.error("Fetch attempt failed:", error);
-                        if (retryCount >= maxRetries - 1) throw error;
-                        retryCount++;
-                        await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+                        await deleteDoc(doc(db, transactionsCollection.path, transactionId));
+                        showMessage('تم حذف الحركة بنجاح!', 'success');
+                    } catch (e) {
+                        console.error("Error removing document: ", e);
+                        showMessage('حدث خطأ أثناء حذف الحركة. يرجى المحاولة مرة أخرى.', 'error');
                     }
+                });
+            });
+        }
+        
+        // Handle form submissions
+        async function handleTransactionFormSubmit(e) {
+            e.preventDefault();
+            const amount = parseFloat(amountInput.value);
+            const description = descriptionInput.value;
+            const type = transactionTypeSelect.value;
+            const isInstallment = installmentCheckbox.checked;
+
+            if (isNaN(amount) || amount <= 0 || !description) {
+                showMessage('الرجاء إدخال مبلغ ووصف صحيحين.', 'error');
+                return;
+            }
+
+            const newTransaction = {
+                type: type,
+                amount: amount,
+                description: description,
+                timestamp: new Date().getTime(),
+            };
+
+            if (isInstallment) {
+                const installmentAmount = parseFloat(installmentAmountInput.value);
+                const remainingInstallments = parseInt(remainingInstallmentsInput.value);
+                if (isNaN(installmentAmount) || installmentAmount <= 0 || isNaN(remainingInstallments) || remainingInstallments <= 0) {
+                    showMessage('الرجاء إدخال تفاصيل قسط صحيحة.', 'error');
+                    return;
                 }
+                newTransaction.installmentDetails = {
+                    installmentAmount,
+                    remainingInstallments,
+                    totalLoan: amount,
+                    initialDate: new Date().getTime(),
+                };
+            }
+
+            try {
+                await addDoc(transactionsCollection, newTransaction);
+                showMessage('تمت إضافة الحركة بنجاح!', 'success');
+                transactionForm.reset();
+                installmentDetailsDiv.classList.add('hidden');
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                showMessage('حدث خطأ أثناء إضافة الحركة. يرجى المحاولة مرة أخرى.', 'error');
+            }
+        }
+
+        async function handleSalaryFormSubmit(e) {
+            e.preventDefault();
+            const salaryAmount = parseFloat(salaryInput.value);
+            if (isNaN(salaryAmount) || salaryAmount <= 0) {
+                showMessage('الرجاء إدخال مبلغ راتب صحيح.', 'error');
+                return;
+            }
+
+            try {
+                // Apply all current debts and installments to the new salary
+                const currentDebt = appState.currentDebt || 0;
+                const totalInstallments = appState.totalInstallments || 0;
+                const newSalary = salaryAmount - currentDebt - totalInstallments;
                 
-                if (!response.ok) {
-                    throw new Error(`API Error: ${response.statusText}`);
-                }
+                await setDoc(appStateDoc, {
+                    salary: newSalary,
+                    currentDebt: 0,
+                    totalInstallments: 0,
+                    lastSalaryDate: new Date().getTime(),
+                }, { merge: true });
 
-                const result = await response.json();
-                const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                // Reset installment transactions
+                transactions.forEach(async (t) => {
+                    if (t.installmentDetails && t.installmentDetails.remainingInstallments > 0) {
+                        const newRemaining = t.installmentDetails.remainingInstallments - 1;
+                        if (newRemaining <= 0) {
+                            await deleteDoc(doc(db, transactionsCollection.path, t.id));
+                        } else {
+                            await updateDoc(doc(db, transactionsCollection.path, t.id), {
+                                'installmentDetails.remainingInstallments': newRemaining,
+                            });
+                        }
+                    }
+                });
 
-                if (text) {
-                    analysisText.textContent = text;
-                } else {
-                    analysisText.textContent = 'عذراً، لم أتمكن من الحصول على تحليل. يرجى المحاولة مرة أخرى.';
-                }
-            } catch (error) {
-                console.error('Failed to get analysis:', error);
-                analysisText.textContent = 'حدث خطأ أثناء تحليل بياناتك. يرجى التحقق من اتصالك وإعادة المحاولة.';
-            } finally {
-                loadingIndicator.classList.add('hidden');
+                // Clear all non-installment transactions
+                const batch = db.batch();
+                transactions.forEach(transaction => {
+                    if (!transaction.installmentDetails) {
+                        const transactionRef = doc(db, transactionsCollection.path, transaction.id);
+                        batch.delete(transactionRef);
+                    }
+                });
+                await batch.commit();
+
+                showMessage('تم تسجيل الراتب بنجاح!', 'success');
+                salaryForm.reset();
+            } catch (e) {
+                console.error("Error in salary processing:", e);
+                showMessage('حدث خطأ أثناء تسجيل الراتب. يرجى المحاولة مرة أخرى.', 'error');
             }
         }
         
-        // ربط زر التحليل بالدالة
-        analyzeButton.addEventListener('click', analyzeSpendingWithGemini);
-
-        // تحميل البيانات الأولية عند تحميل الصفحة
-        window.addEventListener('load', () => {
-            // تهيئة Firebase
+        function handleInstallmentCheckboxChange() {
+            if (installmentCheckbox.checked) {
+                installmentDetailsDiv.classList.remove('hidden');
+            } else {
+                installmentDetailsDiv.classList.add('hidden');
+            }
+        }
+        
+        async function initializeApp() {
             try {
-                const app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-
-                onAuthStateChanged(auth, async (user) => {
+                const unsubscribe = onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         userId = user.uid;
-                        userIdDisplay.textContent = `معرف المستخدم: ${userId}`;
+                        userIdDisplay.innerText = `معرف المستخدم: ${userId}`;
                         transactionsCollection = collection(db, `/artifacts/${appId}/users/${userId}/transactions`);
-                        
-                        // استخدام onSnapshot للاستماع للتغييرات في الوقت الفعلي
+                        appStateDoc = doc(db, `/artifacts/${appId}/users/${userId}/appState/data`);
+
                         onSnapshot(transactionsCollection, (snapshot) => {
                             transactionsLoading.classList.add('hidden');
                             transactionsTableContainer.classList.remove('hidden');
@@ -617,9 +371,19 @@
                                 ...doc.data()
                             }));
                             renderTransactions();
+                            updateBalances();
                         });
+
+                        onSnapshot(appStateDoc, (doc) => {
+                            if (doc.exists()) {
+                                appState = doc.data();
+                            } else {
+                                appState = { salary: 0, currentDebt: 0, totalInstallments: 0 };
+                            }
+                            updateBalances();
+                        });
+
                     } else {
-                        // إذا لم يكن هناك مستخدم مسجل الدخول، قم بتسجيل الدخول بشكل مجهول أو باستخدام الرمز المخصص
                         if (initialAuthToken) {
                             await signInWithCustomToken(auth, initialAuthToken);
                         } else {
@@ -632,7 +396,28 @@
                 transactionsLoading.classList.add('hidden');
                 transactionsLoading.innerHTML = `<p class="text-red-600">حدث خطأ في تهيئة قاعدة البيانات. يرجى إعادة تحميل الصفحة.</p>`;
             }
-        });
+        }
+
+        function updateBalances() {
+            const currentDebt = transactions
+                .filter(t => !t.installmentDetails)
+                .reduce((sum, t) => sum + t.amount, 0);
+
+            const totalInstallments = transactions
+                .filter(t => t.installmentDetails && t.installmentDetails.remainingInstallments > 0)
+                .reduce((sum, t) => sum + t.installmentDetails.installmentAmount, 0);
+
+            salaryDisplay.innerText = `${appState.salary ? appState.salary.toFixed(2) : '0.00'} شيكل`;
+            currentDebtDisplay.innerText = `${currentDebt.toFixed(2)} شيكل`;
+            totalInstallmentsDisplay.innerText = `${totalInstallments.toFixed(2)} شيكل`;
+
+            // Update appState object for next salary calculation
+            appState.currentDebt = currentDebt;
+            appState.totalInstallments = totalInstallments;
+        }
+
+        // Initialize on page load
+        initializeApp();
     </script>
 </body>
 </html>
