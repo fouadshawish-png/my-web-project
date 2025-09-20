@@ -28,30 +28,12 @@
         .input-group input, .input-group select {
             width: 100%;
             padding: 8px;
-            border-radius: 8px;
-            border: 1px solid #d1d5db;
+            border: 1px solid #ccc;
+            border-radius: 6px;
         }
-        .btn {
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 700;
-            transition: all 0.2s;
+        .hidden {
+            display: none;
         }
-        .btn-add-income {
-            background-color: #10b981;
-            color: white;
-        }
-        .btn-add-expense {
-            background-color: #ef4444;
-            color: white;
-        }
-        .btn-pay-debt {
-            background-color: #3b82f6;
-            color: white;
-            padding: 8px 16px;
-            font-size: 0.875rem;
-        }
-        /* تصميم النافذة المنبثقة (Modal) */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -62,387 +44,339 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 1000;
-        }
-        .modal-content {
-            background-color: #fff;
-            padding: 24px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 400px;
-            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
-            animation: fadeIn 0.3s ease-in-out;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
+            z-index: 100;
         }
     </style>
 </head>
 <body class="p-8">
+
     <div class="max-w-4xl mx-auto space-y-8">
-        <!-- العنوان الرئيسي -->
-        <header class="text-center">
-            <h1 class="text-4xl font-bold text-gray-800">برنامج إدارة المصروفات الشخصية</h1>
-            <p class="text-gray-500 mt-2">تتبع دخلك ومصروفاتك اليومية بسهولة</p>
-        </header>
-
-        <!-- عرض التاريخ الحالي -->
-        <div class="text-center text-lg font-bold text-gray-600">
-            <p id="current-date"></p>
-        </div>
-
-        <!-- لوحة التحكم الرئيسية -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
-            <div class="card p-6">
-                <h2 class="text-lg font-bold text-gray-600">إجمالي الدخل</h2>
-                <p id="total-income" class="text-4xl font-bold text-green-600 mt-2">0</p>
-            </div>
-            <div class="card p-6">
-                <h2 class="text-lg font-bold text-gray-600">إجمالي المصروفات</h2>
-                <p id="total-expense" class="text-4xl font-bold text-red-600 mt-2">0</p>
-            </div>
-            <div class="card p-6">
-                <h2 class="text-lg font-bold text-gray-600">الصافي</h2>
-                <p id="net-balance" class="text-4xl font-bold text-blue-600 mt-2">0</p>
-            </div>
-            <div class="card p-6">
-                <h2 class="text-lg font-bold text-gray-600">إجمالي الديون</h2>
-                <p id="total-debt" class="text-4xl font-bold text-yellow-600 mt-2">0</p>
-            </div>
-        </div>
-
-        <!-- إضافة معاملة جديدة -->
-        <div class="card p-6 space-y-4">
-            <h2 class="text-2xl font-bold text-gray-800">إضافة معاملة جديدة</h2>
-            
-            <!-- صندوق الرسائل -->
-            <div id="message-box" class="text-center py-2 px-4 rounded-lg hidden"></div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- حقل المبلغ -->
-                <div class="input-group">
-                    <label for="amount">المبلغ</label>
-                    <input type="number" id="amount" placeholder="أدخل المبلغ" class="focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        <!-- قسم الرصيد الحالي والديون -->
+        <div class="card p-6 md:p-8 text-center">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">برنامج المصروفات الشخصية</h1>
+            <div id="userIdDisplay" class="text-sm text-gray-500 font-mono mb-6"></div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 font-bold text-lg">
+                <div class="bg-blue-100 p-4 rounded-lg">
+                    <p class="text-blue-800">الرصيد الحالي</p>
+                    <p id="currentBalance" class="text-2xl mt-1">0.00 شيكل</p>
                 </div>
-                <!-- حقل الوصف -->
-                <div class="input-group">
-                    <label for="description">الوصف</label>
-                    <input type="text" id="description" placeholder="وصف المعاملة" class="focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <div class="bg-red-100 p-4 rounded-lg">
+                    <p class="text-red-800">إجمالي الديون</p>
+                    <p id="totalDebt" class="text-2xl mt-1">0.00 شيكل</p>
+                </div>
+                <div class="bg-yellow-100 p-4 rounded-lg">
+                    <p class="text-yellow-800">الدين المستحق</p>
+                    <p id="totalDueDebt" class="text-2xl mt-1">0.00 شيكل</p>
                 </div>
             </div>
+        </div>
 
-            <!-- خيار الدفع -->
-            <div class="input-group">
-                <label for="payment-type">نوع الدفع</label>
-                <select id="payment-type" class="focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    <option value="cash">نقداً</option>
-                    <option value="credit">دين</option>
-                </select>
+        <!-- قسم إضافة حركة جديدة -->
+        <div class="card p-6 md:p-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">إضافة حركة جديدة</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- حقول الإدخال للمصروفات والدخل -->
+                <div class="space-y-4">
+                    <div class="input-group">
+                        <label for="amountInput">المبلغ</label>
+                        <input type="number" id="amountInput" placeholder="أدخل المبلغ" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="descriptionInput">الوصف</label>
+                        <input type="text" id="descriptionInput" placeholder="أدخل وصفاً للحركة" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="paymentTypeSelect">نوع الدفع</label>
+                        <select id="paymentTypeSelect">
+                            <option value="cash">نقداً</option>
+                            <option value="card">بطاقة</option>
+                            <option value="credit">دين</option>
+                        </select>
+                    </div>
+                    <div id="debtorNameGroup" class="input-group hidden">
+                        <label for="debtorNameInput">اسم الشخص (المدين)</label>
+                        <input type="text" id="debtorNameInput" placeholder="اسم الشخص">
+                    </div>
+                </div>
+                
+                <!-- أزرار الإضافة -->
+                <div class="flex flex-col space-y-4">
+                    <button id="addIncomeBtn" class="bg-green-500 text-white p-4 rounded-lg font-bold hover:bg-green-600 transition">
+                        إضافة دخل
+                    </button>
+                    <button id="addExpenseBtn" class="bg-red-500 text-white p-4 rounded-lg font-bold hover:bg-red-600 transition">
+                        إضافة مصروف
+                    </button>
+                </div>
             </div>
+            <div id="messageBox" class="mt-4 p-3 rounded-lg text-white font-bold hidden"></div>
+        </div>
 
-            <!-- حقل الشخص/الجهة (يظهر فقط عند اختيار "دين") -->
-            <div id="debtor-name-group" class="input-group hidden">
-                <label for="debtor-name">اسم الشخص/الجهة</label>
-                <input type="text" id="debtor-name" placeholder="مثال: البقالة، صديق" class="focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-            </div>
-            
-            <div class="flex flex-col md:flex-row gap-4">
-                <button id="add-income-btn" class="btn btn-add-income w-full hover:opacity-80">إضافة دخل</button>
-                <button id="add-expense-btn" class="btn btn-add-expense w-full hover:opacity-80">إضافة مصروف</button>
+        <!-- قسم الديون المستحقة -->
+        <div class="card p-6 md:p-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">الديون المستحقة</h2>
+            <div id="debtsContainer" class="space-y-4">
+                <!-- سيتم عرض الديون هنا -->
             </div>
         </div>
 
-        <!-- ملخص الديون -->
-        <div class="card p-6">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">ملخص الديون</h2>
-            <div id="debt-summary-list" class="space-y-2">
-                <!-- سيتم عرض ملخص الديون هنا بواسطة JavaScript -->
-            </div>
-        </div>
-
-        <!-- سجل المعاملات -->
-        <div class="card p-6">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">سجل المعاملات</h2>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+        <!-- سجل الحركات -->
+        <div class="card p-6 md:p-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">سجل الحركات</h2>
+            <div id="historyTableContainer" class="overflow-x-auto">
+                <table class="min-w-full bg-white rounded-lg shadow-md">
+                    <thead class="bg-gray-200">
                         <tr>
-                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">النوع</th>
-                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">الوصف</th>
-                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">المبلغ</th>
-                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">نوع الدفع</th>
-                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">الشخص/الجهة</th>
-                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">التاريخ</th>
+                            <th class="py-3 px-4 text-sm font-bold uppercase tracking-wider text-right">المبلغ</th>
+                            <th class="py-3 px-4 text-sm font-bold uppercase tracking-wider text-right">النوع</th>
+                            <th class="py-3 px-4 text-sm font-bold uppercase tracking-wider text-right">الوصف</th>
+                            <th class="py-3 px-4 text-sm font-bold uppercase tracking-wider text-right">تاريخ الحركة</th>
                         </tr>
                     </thead>
-                    <tbody id="transactions-list" class="bg-white divide-y divide-gray-200">
-                        <!-- سيتم إضافة المعاملات هنا بواسطة JavaScript -->
+                    <tbody id="historyTableBody" class="divide-y divide-gray-200">
+                        <!-- سيتم عرض الحركات هنا -->
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
-
-    <!-- نافذة سداد الدين المنبثقة (Modal) -->
-    <div id="repay-debt-modal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <h3 class="text-xl font-bold mb-4">سداد دين</h3>
-            <p id="modal-debtor-name" class="mb-4 text-gray-600"></p>
-            <div class="input-group mb-4">
-                <label for="repay-amount">المبلغ المراد سداده</label>
-                <input type="number" id="repay-amount" placeholder="أدخل المبلغ" class="focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-            </div>
-            <div class="flex justify-end space-x-2">
-                <button id="cancel-repay-btn" class="btn bg-gray-300 text-gray-800 hover:bg-gray-400">إلغاء</button>
-                <button id="confirm-repay-btn" class="btn btn-pay-debt">تأكيد السداد</button>
+    
+    <!-- Modal لسداد الدين -->
+    <div id="repayDebtModal" class="modal-overlay hidden">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm text-center">
+            <h3 class="text-xl font-bold mb-4">سداد الدين</h3>
+            <p id="repayModalText" class="mb-4 text-gray-700"></p>
+            <input type="number" id="repayAmountInput" class="w-full p-2 border rounded-lg mb-4" placeholder="أدخل مبلغ السداد">
+            <div class="flex justify-center gap-4">
+                <button id="confirmRepayBtn" class="bg-green-500 text-white p-3 rounded-lg font-bold hover:bg-green-600">
+                    تأكيد
+                </button>
+                <button id="cancelRepayBtn" class="bg-gray-500 text-white p-3 rounded-lg font-bold hover:bg-gray-600">
+                    إلغاء
+                </button>
             </div>
         </div>
     </div>
 
-    <script>
-        const { ipcRenderer } = require('electron');
-        // المتغيرات الرئيسية
-        const totalIncomeEl = document.getElementById('total-income');
-        const totalExpenseEl = document.getElementById('total-expense');
-        const netBalanceEl = document.getElementById('net-balance');
-        const totalDebtEl = document.getElementById('total-debt');
-        const amountInput = document.getElementById('amount');
-        const descriptionInput = document.getElementById('description');
-        const paymentTypeSelect = document.getElementById('payment-type');
-        const debtorNameInput = document.getElementById('debtor-name');
-        const debtorNameGroup = document.getElementById('debtor-name-group');
-        const addIncomeBtn = document.getElementById('add-income-btn');
-        const addExpenseBtn = document.getElementById('add-expense-btn');
-        const transactionsListEl = document.getElementById('transactions-list');
-        const messageBoxEl = document.getElementById('message-box');
-        const debtSummaryListEl = document.getElementById('debt-summary-list');
-        const currentDateEl = document.getElementById('current-date');
-        
-        // متغيرات النافذة المنبثقة
-        const repayDebtModal = document.getElementById('repay-debt-modal');
-        const modalDebtorNameEl = document.getElementById('modal-debtor-name');
-        const repayAmountInput = document.getElementById('repay-amount');
-        const confirmRepayBtn = document.getElementById('confirm-repay-btn');
-        const cancelRepayBtn = document.getElementById('cancel-repay-btn');
+    <!-- Modal للرسائل -->
+    <div id="messageModal" class="modal-overlay hidden">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm text-center">
+            <p id="messageModalText" class="text-lg font-bold mb-4 text-gray-800"></p>
+            <button id="messageModalCloseBtn" class="bg-blue-500 text-white p-3 rounded-lg font-bold hover:bg-blue-600">
+                موافق
+            </button>
+        </div>
+    </div>
 
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, getDoc, updateDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global Firebase variables
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        let db;
+        let auth;
+        let userId = null;
+        let transactionsCollection;
+        let debtsCollection;
+
+        // UI Elements
+        const currentBalanceEl = document.getElementById('currentBalance');
+        const totalDebtEl = document.getElementById('totalDebt');
+        const totalDueDebtEl = document.getElementById('totalDueDebt');
+        const amountInput = document.getElementById('amountInput');
+        const descriptionInput = document.getElementById('descriptionInput');
+        const paymentTypeSelect = document.getElementById('paymentTypeSelect');
+        const debtorNameGroup = document.getElementById('debtorNameGroup');
+        const debtorNameInput = document.getElementById('debtorNameInput');
+        const addIncomeBtn = document.getElementById('addIncomeBtn');
+        const addExpenseBtn = document.getElementById('addExpenseBtn');
+        const historyTableBody = document.getElementById('historyTableBody');
+        const debtsContainer = document.getElementById('debtsContainer');
+        const repayDebtModal = document.getElementById('repayDebtModal');
+        const repayModalText = document.getElementById('repayModalText');
+        const repayAmountInput = document.getElementById('repayAmountInput');
+        const confirmRepayBtn = document.getElementById('confirmRepayBtn');
+        const cancelRepayBtn = document.getElementById('cancelRepayBtn');
+        const messageModal = document.getElementById('messageModal');
+        const messageModalText = document.getElementById('messageModalText');
+        const messageModalCloseBtn = document.getElementById('messageModalCloseBtn');
+        const userIdDisplay = document.getElementById('userIdDisplay');
+
+        // State
         let transactions = [];
-        let currentDebtor = null; // لتخزين اسم الشخص الحالي للسداد
+        let debts = [];
+        let currentDebtorId = null;
 
-        // دالة لعرض التاريخ الحالي
-        function displayCurrentDate() {
-            const date = new Date();
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            currentDateEl.textContent = date.toLocaleDateString('ar-SA', options);
+        function showMessage(message, isError = false) {
+            messageModalText.textContent = message;
+            messageModal.classList.remove('hidden');
         }
 
-        // دالة لعرض رسالة في صندوق الرسائل
-        function showMessage(message, type) {
-            messageBoxEl.textContent = message;
-            messageBoxEl.classList.remove('hidden');
-            messageBoxEl.classList.remove('bg-red-500', 'bg-green-500');
+        messageModalCloseBtn.onclick = () => {
+            messageModal.classList.add('hidden');
+        };
 
-            if (type === 'error') {
-                messageBoxEl.classList.add('bg-red-500', 'text-white');
-            } else if (type === 'success') {
-                messageBoxEl.classList.add('bg-green-500', 'text-white');
-            } else {
-                messageBoxEl.classList.add('bg-gray-200', 'text-gray-800');
+        // Utility function to get the current date in YYYY-MM-DD format
+        function getCurrentDate() {
+            const today = new Date();
+            return today.toISOString().substring(0, 10);
+        }
+
+        function getTransactionTypeArabic(type) {
+            switch(type) {
+                case 'income': return 'دخل';
+                case 'expense': return 'مصروف';
+                case 'debt-repayment': return 'سداد دين';
+                default: return type;
             }
-            
-            // إخفاء الرسالة بعد 3 ثوانٍ
-            setTimeout(() => {
-                messageBoxEl.classList.add('hidden');
-            }, 3000);
+        }
+        
+        function getPaymentTypeArabic(type) {
+            switch(type) {
+                case 'cash': return 'نقداً';
+                case 'card': return 'بطاقة';
+                case 'credit': return 'دين';
+                default: return type;
+            }
         }
 
-        // دالة لحفظ البيانات باستخدام IPC
-        async function saveTransactions() {
-            await ipcRenderer.invoke('save-data', transactions);
-        }
-
-        // دالة لتحميل البيانات باستخدام IPC
-        async function loadTransactions() {
-            let loadedTransactions = await ipcRenderer.invoke('load-data');
-            transactions = loadedTransactions;
-            renderTransactions();
-            calculateTotals();
-        }
-
-        // دالة لحساب الإجماليات وتحديث العرض
-        function calculateTotals() {
-            let totalIncome = 0;
-            let totalCashExpense = 0;
-            const debtSummary = {};
-
-            transactions.forEach(transaction => {
-                if (transaction.type === 'income') {
-                    totalIncome += transaction.amount;
-                } else if (transaction.type === 'expense') {
-                    if (transaction.paymentType === 'cash') {
-                        totalCashExpense += transaction.amount;
-                    } else if (transaction.paymentType === 'credit') {
-                        const debtor = transaction.debtor;
-                        debtSummary[debtor] = (debtSummary[debtor] || 0) + transaction.amount;
-                    }
-                } else if (transaction.type === 'repayment') {
-                    // سداد الدين هو مصروف نقدي، لذلك يجب إضافته إلى إجمالي المصروفات النقدية
-                    totalCashExpense += transaction.amount;
-                    const debtor = transaction.debtor;
-                    debtSummary[debtor] = (debtSummary[debtor] || 0) - transaction.amount;
+        // Render transactions to the history table
+        function renderTransactions() {
+            historyTableBody.innerHTML = '';
+            transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+            transactions.forEach(t => {
+                const row = document.createElement('tr');
+                const isIncome = t.type === 'income';
+                row.className = 'border-b hover:bg-gray-50';
+                
+                let amountText = `${t.amount.toFixed(2)} شيكل`;
+                if (isIncome) {
+                    amountText = `<span class="text-green-600">+${amountText}</span>`;
+                } else {
+                    amountText = `<span class="text-red-600">-${amountText}</span>`;
                 }
+                
+                row.innerHTML = `
+                    <td class="py-3 px-4 text-sm">${amountText}</td>
+                    <td class="py-3 px-4 text-sm">${getTransactionTypeArabic(t.type)}<br><small class="text-gray-500">(${getPaymentTypeArabic(t.paymentType)})</small></td>
+                    <td class="py-3 px-4 text-sm">${t.description}</td>
+                    <td class="py-3 px-4 text-sm">${t.date}</td>
+                `;
+                historyTableBody.appendChild(row);
             });
-
-            // حساب إجمالي الديون من ملخص الديون
-            const totalDebt = Object.values(debtSummary).reduce((sum, current) => sum + current, 0);
-            const netBalance = totalIncome - totalCashExpense;
-
-            totalIncomeEl.textContent = `${totalIncome.toFixed(2)}`;
-            totalExpenseEl.textContent = `${totalCashExpense.toFixed(2)}`;
-            netBalanceEl.textContent = `${netBalance.toFixed(2)}`;
-            totalDebtEl.textContent = `${totalDebt.toFixed(2)}`;
-
-            renderDebtSummary(debtSummary);
         }
 
-        // دالة لإضافة معاملة جديدة
+        // Render debts
+        function renderDebts() {
+            debtsContainer.innerHTML = '';
+            let totalDue = 0;
+            debts.forEach(d => {
+                const debtDiv = document.createElement('div');
+                debtDiv.className = 'bg-red-50 p-4 rounded-lg flex justify-between items-center';
+                debtDiv.innerHTML = `
+                    <p class="font-bold text-red-800">${d.name}</p>
+                    <p class="text-lg font-semibold text-red-700">${d.amount.toFixed(2)} شيكل</p>
+                    <button class="repay-btn bg-red-200 text-red-800 font-bold py-1 px-3 rounded-full hover:bg-red-300 transition" data-debtor-id="${d.id}">سداد</button>
+                `;
+                debtsContainer.appendChild(debtDiv);
+                totalDue += d.amount;
+            });
+            totalDueDebtEl.textContent = `${totalDue.toFixed(2)} شيكل`;
+        }
+
+        // Update balances based on all transactions
+        function updateBalances() {
+            const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+            const totalExpense = transactions.filter(t => t.type === 'expense' || t.type === 'debt-repayment').reduce((sum, t) => sum + t.amount, 0);
+            const totalDebt = debts.reduce((sum, d) => sum + d.amount, 0);
+            const currentBalance = totalIncome - totalExpense;
+
+            currentBalanceEl.textContent = `${currentBalance.toFixed(2)} شيكل`;
+            totalDebtEl.textContent = `${totalDebt.toFixed(2)} شيكل`;
+            
+            if (currentBalance < 0) {
+                currentBalanceEl.parentElement.classList.remove('bg-blue-100');
+                currentBalanceEl.parentElement.classList.add('bg-red-100');
+            } else {
+                currentBalanceEl.parentElement.classList.remove('bg-red-100');
+                currentBalanceEl.parentElement.classList.add('bg-blue-100');
+            }
+        }
+
+        // Add a new transaction
         async function addTransaction(type) {
             const amount = parseFloat(amountInput.value);
             const description = descriptionInput.value.trim();
             const paymentType = paymentTypeSelect.value;
             const debtorName = debtorNameInput.value.trim();
-            
-            if (isNaN(amount) || amount <= 0 || !description) {
-                showMessage('الرجاء إدخال مبلغ صحيح ووصف للمعاملة.', 'error');
-                return;
-            }
 
-            if (paymentType === 'credit' && !debtorName) {
-                showMessage('الرجاء إدخال اسم الشخص/الجهة للديون.', 'error');
+            if (isNaN(amount) || amount <= 0 || !description) {
+                showMessage('الرجاء إدخال مبلغ ووصف صحيحين.', true);
                 return;
             }
 
             const newTransaction = {
-                id: Date.now(),
-                type: type,
-                amount: amount,
-                description: description,
-                paymentType: paymentType,
-                debtor: paymentType === 'credit' ? debtorName : null,
-                date: new Date().toLocaleDateString('ar-SA', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                })
+                amount,
+                description,
+                paymentType,
+                type,
+                date: getCurrentDate()
             };
 
-            transactions.unshift(newTransaction);
-            await saveTransactions(); // حفظ البيانات بعد الإضافة
-            renderTransactions();
-            calculateTotals();
-
-            // مسح الحقول بعد الإضافة
+            if (type === 'expense' && paymentType === 'credit') {
+                if (!debtorName) {
+                    showMessage('الرجاء إدخال اسم الشخص للدين.', true);
+                    return;
+                }
+                const debtRef = await addDoc(debtsCollection, { name: debtorName, amount: amount });
+                newTransaction.debtId = debtRef.id;
+            }
+            
+            await addDoc(transactionsCollection, newTransaction);
+            showMessage('تم إضافة الحركة بنجاح.');
             amountInput.value = '';
             descriptionInput.value = '';
             debtorNameInput.value = '';
-            showMessage('تم إضافة المعاملة بنجاح!', 'success');
+            paymentTypeSelect.value = 'cash';
+            debtorNameGroup.classList.add('hidden');
         }
 
-        // دالة لسداد دين
-        async function repayDebt(debtorName, amountToPay) {
-            if (isNaN(amountToPay) || amountToPay <= 0) {
-                 showMessage('الرجاء إدخال مبلغ صحيح لسداد الدين.', 'error');
-                 return false;
+        // Repay a debt
+        async function repayDebt(debtId, amountToPay) {
+            const debtRef = doc(db, `/artifacts/${appId}/users/${userId}/debts`, debtId);
+            const debtSnap = await getDoc(debtRef);
+
+            if (debtSnap.exists()) {
+                const currentDebt = debtSnap.data();
+                if (amountToPay >= currentDebt.amount) {
+                    await deleteDoc(debtRef);
+                    await addDoc(transactionsCollection, {
+                        amount: currentDebt.amount,
+                        description: `سداد دين كامل لـ ${currentDebt.name}`,
+                        paymentType: 'cash',
+                        type: 'debt-repayment',
+                        date: getCurrentDate()
+                    });
+                    showMessage(`تم سداد الدين لـ ${currentDebt.name} بنجاح.`);
+                } else {
+                    await updateDoc(debtRef, { amount: currentDebt.amount - amountToPay });
+                    await addDoc(transactionsCollection, {
+                        amount: amountToPay,
+                        description: `سداد جزئي لدين لـ ${currentDebt.name}`,
+                        paymentType: 'cash',
+                        type: 'debt-repayment',
+                        date: getCurrentDate()
+                    });
+                    showMessage(`تم سداد ${amountToPay} شيكل من دين ${currentDebt.name}.`);
+                }
             }
-            
-            const newTransaction = {
-                id: Date.now(),
-                type: 'repayment',
-                amount: amountToPay,
-                description: `سداد دين لـ ${debtorName}`,
-                paymentType: 'cash', // السداد دائماً نقداً
-                debtor: debtorName,
-                date: new Date().toLocaleDateString('ar-SA', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                })
-            };
-
-            transactions.unshift(newTransaction);
-            await saveTransactions(); // حفظ البيانات بعد السداد
-            renderTransactions();
-            calculateTotals();
-
-            showMessage('تم تسجيل سداد الدين بنجاح!', 'success');
-            return true;
         }
 
-        // دالة لعرض جميع المعاملات في الجدول
-        function renderTransactions() {
-            transactionsListEl.innerHTML = ''; // مسح المحتوى الحالي
-            transactions.forEach(transaction => {
-                const row = document.createElement('tr');
-                let typeText = '';
-                let typeClass = '';
-                
-                if (transaction.type === 'income') {
-                    typeText = 'دخل';
-                    typeClass = 'text-green-600';
-                } else if (transaction.type === 'expense') {
-                    typeText = 'مصروف';
-                    typeClass = 'text-red-600';
-                } else if (transaction.type === 'repayment') {
-                    typeText = 'سداد دين';
-                    typeClass = 'text-blue-600';
-                }
-                
-                const paymentTypeText = transaction.paymentType === 'cash' ? 'نقداً' : 'ديناً';
-                
-                const debtorHtml = transaction.debtor ? transaction.debtor : '-';
-
-                row.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap"><span class="${typeClass}">${typeText}</span></td>
-                    <td class="px-6 py-4 whitespace-nowrap">${transaction.description}</td>
-                    <td class="px-6 py-4 whitespace-nowrap font-bold">${transaction.amount.toFixed(2)}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">${paymentTypeText}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">${debtorHtml}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">${transaction.date}</td>
-                `;
-                transactionsListEl.appendChild(row);
-            });
-        }
-        
-        // دالة لعرض ملخص الديون
-        function renderDebtSummary(summary) {
-            debtSummaryListEl.innerHTML = ''; // مسح المحتوى الحالي
-            const keys = Object.keys(summary).sort(); // لترتيب الأسماء أبجدياً
-
-            keys.forEach(debtor => {
-                const amount = summary[debtor];
-                if (amount > 0) { // عرض فقط الديون المستحقة
-                    const div = document.createElement('div');
-                    div.className = 'flex justify-between items-center py-2 px-4 rounded-lg bg-gray-50';
-                    div.innerHTML = `
-                        <div class="flex-1 font-bold">${debtor}</div>
-                        <div class="flex-1 text-red-600 font-bold text-left">${amount.toFixed(2)}</div>
-                        <button class="btn btn-pay-debt mr-2" data-debtor="${debtor}">سداد</button>
-                    `;
-                    debtSummaryListEl.appendChild(div);
-                }
-            });
-
-            // إضافة مستمعي الأحداث لجميع أزرار السداد
-            document.querySelectorAll('.btn-pay-debt').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    currentDebtor = e.target.getAttribute('data-debtor');
-                    modalDebtorNameEl.textContent = `لـ ${currentDebtor}`;
-                    repayDebtModal.classList.remove('hidden');
-                });
-            });
-        }
-
-        // إظهار وإخفاء حقل اسم الشخص بناءً على نوع الدفع
+        // Event Listeners
         paymentTypeSelect.addEventListener('change', (e) => {
             if (e.target.value === 'credit') {
                 debtorNameGroup.classList.remove('hidden');
@@ -451,20 +385,28 @@
             }
         });
 
-        // إضافة مستمعي الأحداث للأزرار
         addIncomeBtn.addEventListener('click', () => addTransaction('income'));
         addExpenseBtn.addEventListener('click', () => addTransaction('expense'));
         
-        // إضافة مستمعي أحداث النافذة المنبثقة
+        debtsContainer.addEventListener('click', (e) => {
+            const btn = e.target.closest('.repay-btn');
+            if (btn) {
+                currentDebtorId = btn.dataset.debtorId;
+                const debtor = debts.find(d => d.id === currentDebtorId);
+                if (debtor) {
+                    repayModalText.textContent = `هل تريد سداد دين ${debtor.name} البالغ ${debtor.amount.toFixed(2)} شيكل؟`;
+                    repayDebtModal.classList.remove('hidden');
+                }
+            }
+        });
+
         confirmRepayBtn.addEventListener('click', () => {
             const amountToPay = parseFloat(repayAmountInput.value);
-            
             if (isNaN(amountToPay) || amountToPay <= 0) {
-                 showMessage('الرجاء إدخال مبلغ صحيح لسداد الدين.', 'error');
+                 showMessage('الرجاء إدخال مبلغ صحيح لسداد الدين.');
             } else {
-                 repayDebt(currentDebtor, amountToPay);
+                 repayDebt(currentDebtorId, amountToPay);
             }
-            
             repayDebtModal.classList.add('hidden');
             repayAmountInput.value = '';
         });
@@ -473,13 +415,40 @@
             repayDebtModal.classList.add('hidden');
             repayAmountInput.value = '';
         });
-
-        // تحميل البيانات عند بدء التشغيل
+        
+        // Initial setup
         window.onload = async () => {
-            displayCurrentDate();
-            await loadTransactions();
-        };
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
 
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userId = user.uid;
+                    userIdDisplay.textContent = `معرف المستخدم: ${userId}`;
+                    transactionsCollection = collection(db, `/artifacts/${appId}/users/${userId}/transactions`);
+                    debtsCollection = collection(db, `/artifacts/${appId}/users/${userId}/debts`);
+                    
+                    onSnapshot(transactionsCollection, (snapshot) => {
+                        transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        renderTransactions();
+                        updateBalances();
+                    });
+                    
+                    onSnapshot(debtsCollection, (snapshot) => {
+                        debts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        renderDebts();
+                        updateBalances();
+                    });
+                } else {
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                }
+            });
+        };
     </script>
 </body>
 </html>
