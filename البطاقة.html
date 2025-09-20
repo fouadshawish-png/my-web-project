@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة بطاقة المشتريات</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            direction: rtl;
+            text-align: right;
+            background-color: #f3f4f6;
+        }
+        .hidden {
+            display: none;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body class="p-8">
+
+    <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-6">
+        <h1 class="text-3xl font-bold text-gray-800 text-center mb-6">إدارة بطاقة المشتريات</h1>
+        
+        <!-- ملخص الدورة الحالية -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 text-center font-semibold">
+            <div class="bg-blue-100 p-4 rounded-lg shadow-md">
+                <p class="text-lg text-blue-800">ديون الدورة الشهرية</p>
+                <p id="currentCycleDebt" class="text-2xl text-blue-600 mt-1">0.00 شيكل</p>
+            </div>
+            <div class="bg-red-100 p-4 rounded-lg shadow-md">
+                <p class="text-lg text-red-800">المبلغ المتاح من الراتب</p>
+                <p id="remainingBalance" class="text-2xl text-red-600 mt-1">0.00 شيكل</p>
+            </div>
+            <div class="bg-yellow-100 p-4 rounded-lg shadow-md">
+                <p class="text-lg text-yellow-800">إجمالي الأقساط المتبقية</p>
+                <p id="totalInstallmentDebt" class="text-2xl text-yellow-600 mt-1">0.00 شيكل</p>
+            </div>
+        </div>
+        
+        <!-- قسم جديد لتحليل الإنفاق باستخدام Gemini AI -->
+        <div class="bg-purple-50 p-6 rounded-xl shadow-inner mb-8">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">تحليل مالي ذكي</h2>
+            <p class="text-gray-600 mb-4">
+                احصل على ملخص شامل لأنماط إنفاقك ونصائح لتحسين ميزانيتك، كل ذلك بضغطة زر.
+            </p>
+            <button id="analyzeButton" class="w-full bg-purple-600 text-white py-3 rounded-lg font-bold hover:bg-purple-700 transition duration-300 shadow-md flex items-center justify-center space-x-2">
+                <span>تحليل الإنفاق ✨</span>
+            </button>
+            <div id="analysisResult" class="mt-4 p-4 bg-purple-100 rounded-lg hidden">
+                <p id="analysisText" class="text-gray-800 leading-relaxed"></p>
+                <div id="loadingIndicator" class="mt-2 text-center hidden">
+                    <p class="text-purple-600 animate-pulse">يتم تحليل بياناتك...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- إضافة حركة جديدة -->
+        <div class="bg-gray-50 p-6 rounded-xl shadow-inner mb-8">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">إضافة حركة جديدة</h2>
+            <form id="transactionForm" class="space-y-4">
+                <div>
+                    <label for="transactionType" class="block text-gray-700 font-medium mb-1">نوع الحركة</label>
+                    <select id="transactionType" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="purchase">شراء</option>
+                        <option value="online_purchase">شراء عبر الإنترنت</option>
+                        <option value="cash_withdrawal">سحب نقدي (حد 600 شيكل)</option>
+                        <option value="installment">تقسيط (عمولة 4%)</option>
+                        <option value="salary_payment">دفع راتب</option>
+                    </select>
+                </div>
+                <div id="installmentMonthsGroup" class="hidden">
+                    <label for="installmentMonths" class="block text-gray-700 font-medium mb-1">مدة التقسيط (بالأشهر)</label>
+                    <select id="installmentMonths" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="6">6 أشهر</option>
+                        <option value="12">12 شهر (1 سنة)</option>
+                        <option value="18">18 شهر</option>
+                        <option value="24">24 شهر (2 سنة)</option>
+                        <option value="36">36 شهر (3 سنوات)</option>
+                        <option value="48">48 شهر (4 سنوات)</option>
+                        <option value="60">60 شهر (5 سنوات)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="transactionAmount" class="block text-gray-700 font-medium mb-1">المبلغ</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="transactionAmount" step="0.01" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <select id="currencyType" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="USD">دولار</option>
+                            <option value="NIS">شيكل</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label for="transactionDate" class="block text-gray-700 font-medium mb-1">تاريخ الحركة</label>
+                    <input type="date" id="transactionDate" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="transactionDescription" class="block text-gray-700 font-medium mb-1">الوصف</label>
+                    <input type="text" id="transactionDescription" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition duration-300 shadow-md">
+                    إضافة حركة
+                </button>
+            </form>
+            <div id="messageBox" class="mt-4 p-3 rounded-lg hidden"></div>
+        </div>
+
+        <!-- جدول الحركات -->
+        <div>
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">سجل الحركات</h2>
+            <div class="overflow-x-auto rounded-lg shadow-md">
+                <table class="min-w-full bg-white">
+                    <thead class="bg-gray-200">
+                        <tr>
+                            <th class="py-3 px-6 text-gray-700 font-bold uppercase tracking-wider">النوع</th>
+                            <th class="py-3 px-6 text-gray-700 font-bold uppercase tracking-wider">الوصف</th>
+                            <th class="py-3 px-6 text-gray-700 font-bold uppercase tracking-wider">المبلغ</th>
+                            <th class="py-3 px-6 text-gray-700 font-bold uppercase tracking-wider">التاريخ</th>
+                            <th class="py-3 px-6 text-gray-700 font-bold uppercase tracking-wider"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionTableBody" class="divide-y divide-gray-200">
+                        <!-- سيتم إضافة الحركات هنا بواسطة JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة تأكيد خصم الأقساط (Modal) -->
+    <div id="deductionModal" class="modal-overlay hidden">
+        <div class="bg-white p-8 rounded-lg shadow-2xl text-center max-w-sm mx-auto">
+            <h3 class="text-xl font-bold mb-4">هل تم خصم الأقساط من راتبك؟</h3>
+            <p class="text-gray-700 mb-6">
+                إذا كانت الأقساط قد خُصمت، سنقوم بتحديث سجلاتك. إذا لم تكن قد خُصمت، سيتم ترحيل الديون للدورة القادمة.
+            </p>
+            <div class="flex justify-center gap-4">
+                <button id="yesButton" class="bg-green-600 text-white py-2 px-6 rounded-lg font-bold hover:bg-green-700 transition duration-300">
+                    نعم
+                </button>
+                <button id="noButton" class="bg-red-600 text-white py-2 px-6 rounded-lg font-bold hover:bg-red-700 transition duration-300">
+                    لا
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('transactionForm');
+            const typeSelect = document.getElementById('transactionType');
+            const installmentMonthsGroup = document.getElementById('installmentMonthsGroup');
+            const installmentMonthsSelect = document.getElementById('installmentMonths');
+            const tableBody = document.getElementById('transactionTableBody');
+            const currentCycleDebtEl = document.getElementById('currentCycleDebt');
+            const remainingBalanceEl = document.getElementById('remainingBalance');
+            const totalInstallmentDebtEl = document.getElementById('totalInstallmentDebt');
+            const messageBox = document.getElementById('messageBox');
+            const transactionDateInput = document.getElementById('transactionDate');
+            const currencySelect = document.getElementById('currencyType');
+            const deductionModal = document.getElementById('deductionModal');
+            const yesButton = document.getElementById('yesButton');
+            const noButton = document.getElementById('noButton');
+            const analyzeButton = document.getElementById('analyzeButton');
+            const analysisResult = document.getElementById('analysisResult');
+            const analysisText = document.getElementById('analysisText');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+
+            const transactionsKey = 'cardTransactions';
+            const CASH_WITHDRAWAL_LIMIT = 600;
+            const INSTALLMENT_COMMISSION_RATE = 0.04; // 4%
+            const USD_TO_NIS_RATE = 3.75; // سعر الصرف الثابت من دولار إلى شيكل
+
+            let transactions = JSON.parse(localStorage.getItem(transactionsKey)) || [];
+
+            // إظهار/إخفاء حقل سنوات التقسيط
+            typeSelect.addEventListener('change', () => {
+                if (typeSelect.value === 'installment') {
+                    installmentMonthsGroup.classList.remove('hidden');
+                } else {
+                    installmentMonthsGroup.classList.add('hidden');
+                }
+            });
+
+            // دالة لإظهار رسالة للمستخدم
+            function showMessage(message, type = 'info') {
+                messageBox.textContent = message;
+                messageBox.className = `mt-4 p-3 rounded-lg ${
+                    type === 'error' ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800'
+                }`;
+                messageBox.style.display = 'block';
+                setTimeout(() => {
+                    messageBox.style.display = 'none';
+                }, 5000);
+            }
+
+            // دالة لتحويل المبلغ إلى شيكل
+            function getAmountInNIS(amount, currency) {
+                return currency === 'USD' ? amount * USD_TO_NIS_RATE : amount;
+            }
+
+            // دالة لتحديث الأرصدة
+            function updateBalances() {
+                const lastSalaryIndex = transactions.slice().reverse().findIndex(t => t.type === 'salary_payment');
+                const startIndex = lastSalaryIndex !== -1 ? transactions.length - 1 - lastSalaryIndex : 0;
+                
+                let cycleDebt = 0;
+                let salaryReceived = 0;
+                let totalInstallmentDebt = 0;
+
+                for (let i = startIndex; i < transactions.length; i++) {
+                    const t = transactions[i];
+                    if (t.type === 'salary_payment') {
+                        salaryReceived = getAmountInNIS(t.amount, t.currency);
+                    } else if (t.type === 'installment' && t.remainingMonths > 0) {
+                        cycleDebt += getAmountInNIS(t.monthlyPayment, t.currency);
+                        totalInstallmentDebt += getAmountInNIS(t.totalInstallmentAmount, t.currency);
+                    } else if (t.type !== 'installment_payment') {
+                        cycleDebt += getAmountInNIS(t.amount, t.currency);
+                    }
+                }
+                
+                const remaining = salaryReceived - cycleDebt;
+                
+                currentCycleDebtEl.textContent = `${cycleDebt.toFixed(2)} شيكل`;
+                remainingBalanceEl.textContent = `${remaining.toFixed(2)} شيكل`;
+                totalInstallmentDebtEl.textContent = `${totalInstallmentDebt.toFixed(2)} شيكل`;
+                
+                if (remaining < 0) {
+                    remainingBalanceEl.parentElement.classList.remove('bg-green-100');
+                    remainingBalanceEl.parentElement.classList.add('bg-red-100');
+                } else {
+                    remainingBalanceEl.parentElement.classList.remove('bg-red-100');
+                    remainingBalanceEl.parentElement.classList.add('bg-green-100');
+                }
+            }
+
+            // دالة لعرض جميع الحركات في الجدول
+            function renderTransactions() {
+                tableBody.innerHTML = '';
+                transactions.sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort by date descending
+                
+                transactions.forEach((t, index) => {
+                    const row = document.createElement('tr');
+                    const isDebt = ['purchase', 'online_purchase', 'cash_withdrawal', 'installment', 'installment_payment'].includes(t.type);
+                    const amountClass = isDebt ? 'text-red-600' : 'text-green-600';
+                    const amountSign = isDebt ? '-' : '+';
+                    const currencySymbol = t.currency === 'USD' ? '$' : 'شيكل';
+                    
+                    row.className = `text-gray-700 hover:bg-gray-100 transition-colors duration-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`;
+                    
+                    let descriptionText = t.description;
+                    if (t.type === 'installment' && t.remainingMonths !== undefined) {
+                        const paidMonths = t.totalInstallmentMonths - t.remainingMonths;
+                        descriptionText += ` (قسط شهري: ${t.monthlyPayment.toFixed(2)} ${currencySymbol} - تم سداد ${paidMonths} من ${t.totalInstallmentMonths} شهر)`;
+                    }
+
+                    if (t.type === 'installment') {
+                        row.innerHTML = `
+                            <td class="py-3 px-6 text-sm whitespace-nowrap">${t.typeText}</td>
+                            <td class="py-3 px-6 text-sm whitespace-nowrap">${descriptionText}</td>
+                            <td class="py-3 px-6 text-sm whitespace-nowrap ${amountClass}">
+                                -${t.monthlyPayment.toFixed(2)} ${currencySymbol}
+                                <br>
+                                <span class="text-xs text-gray-500">(الإجمالي: ${t.amount.toFixed(2)} ${currencySymbol}, الأصلي: ${t.originalAmount.toFixed(2)} ${currencySymbol})</span>
+                            </td>
+                            <td class="py-3 px-6 text-sm whitespace-nowrap">${new Date(t.date).toLocaleDateString('ar-SY')}</td>
+                            <td class="py-3 px-6 text-sm whitespace-nowrap">
+                                <button onclick="deleteTransaction(${index})" class="text-red-500 hover:text-red-700 transition duration-300">
+                                    حذف
+                                </button>
+                            </td>
+                        `;
+                    } else if (t.type === 'installment_payment') {
+                        row.innerHTML = `
+                            <td class="py-3 px-6 text-sm whitespace-nowrap">${t.typeText}</td>
+                            <td class="py-3 px-6 text-sm whitespace-nowrap">${descriptionText}</td>
+                            <td class="py-3 px-6 text-sm whitespace-nowrap text-green-600">+${t.amount.toFixed(2)} ${currencySymbol}</td>
+                            <td class="py-3 px-6 text-sm whitespace-nowrap">${new Date(t.date).toLocaleDateString('ar-SY')}</td>
+                            <td class="py-3 px-6 text-sm whitespace-nowrap">
+                                <button onclick="deleteTransaction(${index})" class="text-red-500 hover:text-red-700 transition duration-300">
+                                    حذف
+                                </button>
+                            </td>
+                        `;
+                    } else {
+                        row.innerHTML = `
+                            <td class="py-3 px-6 text-sm whitespace-nowrap">${t.typeText}</td>
+                            <td class="py-3 px-6 text-sm whitespace-nowrap">${descriptionText}</td>
+                            <td class="py-3 px-6 text-sm whitespace-nowrap ${amountClass}">${amountSign}${t.amount.toFixed(2)} ${currencySymbol}</td>
+                            <td class="py-3 px-6 text-sm whitespace-nowrap">${new Date(t.date).toLocaleDateString('ar-SY')}</td>
+                            <td class="py-3 px-6 text-sm whitespace-nowrap">
+                                <button onclick="deleteTransaction(${index})" class="text-red-500 hover:text-red-700 transition duration-300">
+                                    حذف
+                                </button>
+                            </td>
+                        `;
+                    }
+                    tableBody.appendChild(row);
+                });
+                updateBalances();
+            }
+
+            // دالة لحذف حركة
+            window.deleteTransaction = function(index) {
+                transactions.splice(index, 1);
+                localStorage.setItem(transactionsKey, JSON.stringify(transactions));
+                renderTransactions();
+                showMessage('تم حذف الحركة بنجاح.', 'success');
+            }
+
+            // دالة لإضافة الراتب وخصم الأقساط
+            function deductInstallmentsAndAddSalary() {
+                const amountInput = document.getElementById('transactionAmount');
+                const descInput = document.getElementById('transactionDescription');
+                const transactionDateInput = document.getElementById('transactionDate');
+                const currencySelect = document.getElementById('currencyType');
+
+                const amount = parseFloat(amountInput.value);
+                const description = descInput.value.trim();
+                const typeText = typeSelect.options[typeSelect.selectedIndex].text;
+                const transactionDate = transactionDateInput.value || new Date().toISOString().substring(0, 10);
+                const currency = currencySelect.value;
+
+                const newTransaction = {
+                    id: Date.now(),
+                    type: 'salary_payment',
+                    typeText,
+                    amount,
+                    description,
+                    date: transactionDate,
+                    currency
+                };
+                transactions.push(newTransaction);
+
+                transactions.forEach(t => {
+                    if (t.type === 'installment' && t.remainingMonths > 0) {
+                        t.remainingMonths--;
+                        const installmentPayment = {
+                            type: 'installment_payment',
+                            typeText: 'سداد قسط',
+                            amount: t.monthlyPayment,
+                            description: `سداد قسط شهري لـ: ${t.description}`,
+                            date: transactionDate,
+                            currency: t.currency
+                        };
+                        transactions.push(installmentPayment);
+                    }
+                });
+                
+                showMessage('تم تسجيل دفع الراتب وخصم الأقساط الشهرية.', 'success');
+                localStorage.setItem(transactionsKey, JSON.stringify(transactions));
+                form.reset();
+                renderTransactions();
+            }
+
+            // دالة لإضافة الراتب فقط دون خصم
+            function addSalaryOnly() {
+                const amountInput = document.getElementById('transactionAmount');
+                const descInput = document.getElementById('transactionDescription');
+                const transactionDateInput = document.getElementById('transactionDate');
+                const currencySelect = document.getElementById('currencyType');
+
+                const amount = parseFloat(amountInput.value);
+                const description = descInput.value.trim();
+                const typeText = typeSelect.options[typeSelect.selectedIndex].text;
+                const transactionDate = transactionDateInput.value || new Date().toISOString().substring(0, 10);
+                const currency = currencySelect.value;
+
+                const newTransaction = {
+                    id: Date.now(),
+                    type: 'salary_payment',
+                    typeText,
+                    amount,
+                    description,
+                    date: transactionDate,
+                    currency
+                };
+                transactions.push(newTransaction);
+                
+                showMessage('تم تسجيل دفع الراتب دون خصم الأقساط. سيتم ترحيل الديون.', 'success');
+                localStorage.setItem(transactionsKey, JSON.stringify(transactions));
+                form.reset();
+                renderTransactions();
+            }
+
+            // ربط معالجات الأحداث بأزرار مربع الحوار مباشرةً
+            yesButton.onclick = () => {
+                deductInstallmentsAndAddSalary();
+                deductionModal.classList.add('hidden');
+            };
+
+            noButton.onclick = () => {
+                addSalaryOnly();
+                deductionModal.classList.add('hidden');
+            };
+
+            // معالج حدث لإضافة حركة جديدة
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const amountInput = document.getElementById('transactionAmount');
+                const descInput = document.getElementById('transactionDescription');
+                const type = typeSelect.value;
+                const currency = currencySelect.value;
+                let amount = parseFloat(amountInput.value);
+                const description = descInput.value.trim();
+                const typeText = typeSelect.options[typeSelect.selectedIndex].text;
+                const transactionDate = transactionDateInput.value || new Date().toISOString().substring(0, 10);
+
+                if (isNaN(amount) || amount <= 0) {
+                    showMessage('يرجى إدخال مبلغ صحيح وموجب.', 'error');
+                    return;
+                }
+
+                if (type === 'cash_withdrawal' && getAmountInNIS(amount, currency) > CASH_WITHDRAWAL_LIMIT) {
+                    showMessage(`لا يمكن سحب أكثر من ${CASH_WITHDRAWAL_LIMIT} شيكل نقداً.`, 'error');
+                    return;
+                }
+
+                if (type === 'installment') {
+                    const months = parseInt(installmentMonthsSelect.value, 10);
+                    let years = months / 12;
+                    if (months === 6) {
+                        years = 1;
+                    }
+                    
+                    const totalCommission = amount * INSTALLMENT_COMMISSION_RATE * years;
+                    const totalInstallmentAmount = amount + totalCommission;
+                    const monthlyPayment = totalInstallmentAmount / months;
+                    
+                    const newTransaction = {
+                        id: Date.now(),
+                        type,
+                        typeText,
+                        amount: totalInstallmentAmount,
+                        originalAmount: amount,
+                        description,
+                        date: transactionDate,
+                        currency,
+                        totalInstallmentMonths: months,
+                        monthlyPayment,
+                        remainingMonths: months
+                    };
+                    transactions.push(newTransaction);
+                    const currencySymbol = newTransaction.currency === 'USD' ? '$' : 'شيكل';
+                    showMessage(`تم حساب مبلغ التقسيط الإجمالي: ${totalInstallmentAmount.toFixed(2)} ${currencySymbol}. القسط الشهري: ${monthlyPayment.toFixed(2)} ${currencySymbol}.`, 'info');
+                    localStorage.setItem(transactionsKey, JSON.stringify(transactions));
+                    form.reset();
+                    renderTransactions();
+
+                } else if (type === 'salary_payment') {
+                    deductionModal.classList.remove('hidden');
+                } else {
+                    const newTransaction = {
+                        id: Date.now(),
+                        type,
+                        typeText,
+                        amount,
+                        description,
+                        date: transactionDate,
+                        currency
+                    };
+                    transactions.push(newTransaction);
+                    const currencySymbol = newTransaction.currency === 'USD' ? '$' : 'شيكل';
+                    showMessage(`تم إضافة الحركة بنجاح.`, 'success');
+                    localStorage.setItem(transactionsKey, JSON.stringify(transactions));
+                    form.reset();
+                    renderTransactions();
+                }
+            });
+
+            // دالة للاتصال بـ Gemini لتحليل الإنفاق
+            async function analyzeSpendingWithGemini() {
+                analysisResult.classList.remove('hidden');
+                analysisText.textContent = '';
+                loadingIndicator.classList.remove('hidden');
+
+                // تحويل بيانات الحركات إلى نص سهل الفهم لنموذج الذكاء الاصطناعي
+                const transactionDetails = transactions.map(t => {
+                    const sign = (t.type !== 'salary_payment' && t.type !== 'installment_payment') ? '-' : '+';
+                    return `- ${t.typeText}: ${t.description} (مبلغ: ${sign}${t.amount.toFixed(2)} ${t.currency}, تاريخ: ${new Date(t.date).toLocaleDateString('ar-SY')})`;
+                }).join('\n');
+
+                const prompt = `
+                أنا أقوم بإدارة بطاقة مشترياتي، وهنا سجل بحركاتي المالية:
+                
+                ${transactionDetails}
+
+                بصفتك مستشارًا ماليًا، قدم لي تحليلًا موجزًا وشاملاً لأنماط إنفاقي. أجب باللغة العربية. يجب أن يتضمن التحليل ما يلي:
+                1.  تحديد أبرز ثلاثة مجالات للإنفاق.
+                2.  تقديم نصيحة واحدة قابلة للتنفيذ لتحسين ميزانيتي.
+                3.  تقييم عام لحالتي المالية (مثلاً: "جيدة"، "بحاجة إلى تحسين"، "ممتازة").
+                
+                اجعل الإجابة في فقرة واحدة فقط.
+                `;
+
+                const payload = {
+                    contents: [{ parts: [{ text: prompt }] }],
+                    tools: [{ "google_search": {} }],
+                    systemInstruction: {
+                        parts: [{ text: "أنت محلل مالي خبير. قدم تحليلًا موجزًا ومباشرًا. يجب أن تكون إجابتك في فقرة واحدة فقط." }]
+                    },
+                };
+                
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`API Error: ${response.statusText}`);
+                    }
+
+                    const result = await response.json();
+                    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                    if (text) {
+                        analysisText.textContent = text;
+                    } else {
+                        analysisText.textContent = 'عذرًا، لم أتمكن من الحصول على تحليل. يرجى المحاولة مرة أخرى.';
+                    }
+                } catch (error) {
+                    console.error('Failed to get analysis:', error);
+                    analysisText.textContent = 'حدث خطأ أثناء تحليل بياناتك. يرجى التحقق من اتصالك وإعادة المحاولة.';
+                } finally {
+                    loadingIndicator.classList.add('hidden');
+                }
+            }
+
+            // ربط زر التحليل بالدالة
+            analyzeButton.addEventListener('click', analyzeSpendingWithGemini);
+
+            // عرض الحركات عند تحميل الصفحة
+            renderTransactions();
+        });
+    </script>
+
+</body>
+</html>
