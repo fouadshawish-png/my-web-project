@@ -23,25 +23,25 @@
         
         <div class="mb-4">
             <label for="distanceInput" class="block text-slate-700 font-semibold mb-2">المسافة المقطوعة (بالكيلومتر)</label>
-            <input type="number" id="distanceInput" class="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 transition duration-300" placeholder="أدخل المسافة">
+            <input type="number" id="distanceInput" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="مثال: 500">
         </div>
         
         <div class="mb-4">
-            <label for="efficiencyInput" class="block text-slate-700 font-semibold mb-2">معدل الاستهلاك (كم لكل لتر)</label>
-            <input type="number" id="efficiencyInput" class="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 transition duration-300" placeholder="مثال: 12">
+            <label for="efficiencyInput" class="block text-slate-700 font-semibold mb-2">معدل الاستهلاك (كم/لتر)</label>
+            <input type="number" id="efficiencyInput" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="مثال: 12">
         </div>
-
-        <div class="mb-4">
-            <label for="priceInput" class="block text-slate-700 font-semibold mb-2">سعر اللتر (بالعملة المحلية)</label>
-            <input type="number" id="priceInput" class="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 transition duration-300" placeholder="مثال: 0.95">
+        
+        <div class="mb-6">
+            <label for="priceInput" class="block text-slate-700 font-semibold mb-2">سعر اللتر (بالشيكل)</label>
+            <input type="number" id="priceInput" step="0.01" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="مثال: 7.20">
         </div>
-
-        <button id="calculateBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 transform hover:scale-105 shadow-md">
-            احسب التكلفة
+        
+        <button id="calculateBtn" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 transition duration-300">
+            احسب
         </button>
         
-        <div id="result" class="mt-8 p-4 text-center text-slate-800 bg-slate-100 rounded-lg border border-slate-200">
-            <p class="text-lg">سيظهر الناتج هنا...</p>
+        <div id="result" class="mt-8 p-6 bg-gray-100 rounded-lg text-center">
+            <p class="text-lg text-gray-700">النتائج ستظهر هنا...</p>
         </div>
     </div>
 
@@ -70,7 +70,7 @@
                     <p class="text-lg">إجمالي البنزين المستهلك هو:</p>
                     <p class="text-2xl font-bold text-green-600 mt-1">${fuelConsumed.toFixed(2)} لتر</p>
                     <p class="text-lg mt-4">إجمالي التكلفة المتوقعة هي:</p>
-                    <p class="text-2xl font-bold text-blue-600 mt-1">${totalCost.toFixed(2)}</p>
+                    <p class="text-2xl font-bold text-blue-600 mt-1">${totalCost.toFixed(2)} شيكل</p>
                 `;
             });
         });
