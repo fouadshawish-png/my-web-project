@@ -27,6 +27,16 @@
             align-items: center;
             z-index: 100;
         }
+        .loading-dot {
+            animation: bounce 1.2s infinite ease-in-out both;
+        }
+        .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+        .loading-dot:nth-child(3) { animation-delay: 0s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1.0); }
+        }
     </style>
 </head>
 <body class="p-8">
@@ -62,7 +72,12 @@
             <div id="analysisResult" class="mt-4 p-4 bg-purple-100 rounded-lg hidden">
                 <p id="analysisText" class="text-gray-800 leading-relaxed"></p>
                 <div id="loadingIndicator" class="mt-2 text-center hidden">
-                    <p class="text-purple-600 animate-pulse">يتم تحليل بياناتك...</p>
+                    <p class="text-purple-600">
+                        <span>يتم تحليل بياناتك</span>
+                        <span class="loading-dot">.</span>
+                        <span class="loading-dot">.</span>
+                        <span class="loading-dot">.</span>
+                    </p>
                 </div>
             </div>
         </div>
@@ -482,8 +497,15 @@
                 }
             });
 
-            // دالة للاتصال بـ Gemini لتحليل الإنفاق
+            // دالة للاتصال بـ Gemini لتحليل الإنفاق (نسخة معدلة)
             async function analyzeSpendingWithGemini() {
+                // التحقق من وجود حركات قبل إرسال الطلب
+                if (transactions.length === 0) {
+                    showMessage('لا يوجد بيانات كافية للتحليل. يرجى إضافة بعض الحركات أولاً.', 'error');
+                    return;
+                }
+
+                // عرض مؤشر التحميل وإخفاء النص السابق
                 analysisResult.classList.remove('hidden');
                 analysisText.textContent = '';
                 loadingIndicator.classList.remove('hidden');
@@ -499,10 +521,10 @@
                 
                 ${transactionDetails}
 
-                بصفتك مستشارًا ماليًا، قدم لي تحليلًا موجزًا وشاملاً لأنماط إنفاقي. أجب باللغة العربية. يجب أن يتضمن التحليل ما يلي:
-                1.  تحديد أبرز ثلاثة مجالات للإنفاق.
-                2.  تقديم نصيحة واحدة قابلة للتنفيذ لتحسين ميزانيتي.
-                3.  تقييم عام لحالتي المالية (مثلاً: "جيدة"، "بحاجة إلى تحسين"، "ممتازة").
+                بصفتك مستشارًا ماليًا، قدم لي تحليلًا موجزًا وشاملًا لأنماط إنفاقي. أجب باللغة العربية. يجب أن يتضمن التحليل ما يلي:
+                1. تحديد أبرز ثلاثة مجالات للإنفاق.
+                2. تقديم نصيحة واحدة قابلة للتنفيذ لتحسين ميزانيتي.
+                3. تقييم عام لحالتي المالية (مثلاً: "جيدة"، "بحاجة إلى تحسين"، "ممتازة").
                 
                 اجعل الإجابة في فقرة واحدة فقط.
                 `;
@@ -517,18 +539,43 @@
                 
                 const apiKey = "";
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                let retryCount = 0;
+                const maxRetries = 3;
+                let response = null;
+
+                while (retryCount < maxRetries) {
+                    try {
+                        response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (response.ok) {
+                            break; // الخروج من الحلقة في حالة النجاح
+                        } else if (response.status === 429) {
+                            // التعامل مع حالة تجاوز الحد الأقصى للمحاولات
+                            const delay = Math.pow(2, retryCount) * 1000;
+                            console.warn(`Too many requests. Retrying in ${delay / 1000} seconds...`);
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            retryCount++;
+                        } else {
+                            throw new Error(`API Error: ${response.statusText}`);
+                        }
+                    } catch (error) {
+                        console.error('Failed to get analysis:', error);
+                        if (retryCount === maxRetries - 1) {
+                             analysisText.textContent = 'حدث خطأ أثناء تحليل بياناتك. يرجى التحقق من اتصالك وإعادة المحاولة.';
+                             return;
+                        }
+                        const delay = Math.pow(2, retryCount) * 1000;
+                        console.warn(`Fetch failed. Retrying in ${delay / 1000} seconds...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        retryCount++;
+                    }
+                }
 
                 try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`API Error: ${response.statusText}`);
-                    }
-
                     const result = await response.json();
                     const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
 
@@ -538,8 +585,8 @@
                         analysisText.textContent = 'عذرًا، لم أتمكن من الحصول على تحليل. يرجى المحاولة مرة أخرى.';
                     }
                 } catch (error) {
-                    console.error('Failed to get analysis:', error);
-                    analysisText.textContent = 'حدث خطأ أثناء تحليل بياناتك. يرجى التحقق من اتصالك وإعادة المحاولة.';
+                    console.error('Failed to parse response:', error);
+                    analysisText.textContent = 'حدث خطأ في معالجة الاستجابة. يرجى إعادة المحاولة.';
                 } finally {
                     loadingIndicator.classList.add('hidden');
                 }
