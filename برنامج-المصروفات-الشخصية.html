@@ -15,25 +15,30 @@
             font-family: 'Tajawal', sans-serif;
             background-color: #f3f4f6;
         }
+
         .card {
             background-color: #fff;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             border-radius: 12px;
         }
+
         .input-group label {
             display: block;
             margin-bottom: 4px;
             font-weight: 700;
         }
+
         .input-group input, .input-group select {
             width: 100%;
             padding: 8px;
             border: 1px solid #ccc;
             border-radius: 6px;
         }
+
         .hidden {
             display: none;
         }
+
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -98,7 +103,7 @@
                         <input type="text" id="debtorNameInput" placeholder="اسم الشخص">
                     </div>
                 </div>
-                
+
                 <!-- أزرار الإضافة -->
                 <div class="flex flex-col space-y-4">
                     <button id="addIncomeBtn" class="bg-green-500 text-white p-4 rounded-lg font-bold hover:bg-green-600 transition">
@@ -140,7 +145,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Modal لسداد الدين -->
     <div id="repayDebtModal" class="modal-overlay hidden">
         <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm text-center">
@@ -227,16 +232,16 @@
         }
 
         function getTransactionTypeArabic(type) {
-            switch(type) {
+            switch (type) {
                 case 'income': return 'دخل';
                 case 'expense': return 'مصروف';
                 case 'debt-repayment': return 'سداد دين';
                 default: return type;
             }
         }
-        
+
         function getPaymentTypeArabic(type) {
-            switch(type) {
+            switch (type) {
                 case 'cash': return 'نقداً';
                 case 'card': return 'بطاقة';
                 case 'credit': return 'دين';
@@ -252,20 +257,20 @@
                 const row = document.createElement('tr');
                 const isIncome = t.type === 'income';
                 row.className = 'border-b hover:bg-gray-50';
-                
+
                 let amountText = `${t.amount.toFixed(2)} شيكل`;
                 if (isIncome) {
                     amountText = `<span class="text-green-600">+${amountText}</span>`;
                 } else {
                     amountText = `<span class="text-red-600">-${amountText}</span>`;
                 }
-                
+
                 row.innerHTML = `
-                    <td class="py-3 px-4 text-sm">${amountText}</td>
-                    <td class="py-3 px-4 text-sm">${getTransactionTypeArabic(t.type)}<br><small class="text-gray-500">(${getPaymentTypeArabic(t.paymentType)})</small></td>
-                    <td class="py-3 px-4 text-sm">${t.description}</td>
-                    <td class="py-3 px-4 text-sm">${t.date}</td>
-                `;
+                        <td class="py-3 px-4 text-sm">${amountText}</td>
+                        <td class="py-3 px-4 text-sm">${getTransactionTypeArabic(t.type)}<br><small class="text-gray-500">(${getPaymentTypeArabic(t.paymentType)})</small></td>
+                        <td class="py-3 px-4 text-sm">${t.description}</td>
+                        <td class="py-3 px-4 text-sm">${t.date}</td>
+                    `;
                 historyTableBody.appendChild(row);
             });
         }
@@ -278,10 +283,10 @@
                 const debtDiv = document.createElement('div');
                 debtDiv.className = 'bg-red-50 p-4 rounded-lg flex justify-between items-center';
                 debtDiv.innerHTML = `
-                    <p class="font-bold text-red-800">${d.name}</p>
-                    <p class="text-lg font-semibold text-red-700">${d.amount.toFixed(2)} شيكل</p>
-                    <button class="repay-btn bg-red-200 text-red-800 font-bold py-1 px-3 rounded-full hover:bg-red-300 transition" data-debtor-id="${d.id}">سداد</button>
-                `;
+                        <p class="font-bold text-red-800">${d.name}</p>
+                        <p class="text-lg font-semibold text-red-700">${d.amount.toFixed(2)} شيكل</p>
+                        <button class="repay-btn bg-red-200 text-red-800 font-bold py-1 px-3 rounded-full hover:bg-red-300 transition" data-debtor-id="${d.id}">سداد</button>
+                    `;
                 debtsContainer.appendChild(debtDiv);
                 totalDue += d.amount;
             });
@@ -297,7 +302,7 @@
 
             currentBalanceEl.textContent = `${currentBalance.toFixed(2)} شيكل`;
             totalDebtEl.textContent = `${totalDebt.toFixed(2)} شيكل`;
-            
+
             if (currentBalance < 0) {
                 currentBalanceEl.parentElement.classList.remove('bg-blue-100');
                 currentBalanceEl.parentElement.classList.add('bg-red-100');
@@ -335,7 +340,7 @@
                 const debtRef = await addDoc(debtsCollection, { name: debtorName, amount: amount });
                 newTransaction.debtId = debtRef.id;
             }
-            
+
             await addDoc(transactionsCollection, newTransaction);
             showMessage('تم إضافة الحركة بنجاح.');
             amountInput.value = '';
@@ -387,7 +392,7 @@
 
         addIncomeBtn.addEventListener('click', () => addTransaction('income'));
         addExpenseBtn.addEventListener('click', () => addTransaction('expense'));
-        
+
         debtsContainer.addEventListener('click', (e) => {
             const btn = e.target.closest('.repay-btn');
             if (btn) {
@@ -403,9 +408,9 @@
         confirmRepayBtn.addEventListener('click', () => {
             const amountToPay = parseFloat(repayAmountInput.value);
             if (isNaN(amountToPay) || amountToPay <= 0) {
-                 showMessage('الرجاء إدخال مبلغ صحيح لسداد الدين.');
+                showMessage('الرجاء إدخال مبلغ صحيح لسداد الدين.');
             } else {
-                 repayDebt(currentDebtorId, amountToPay);
+                repayDebt(currentDebtorId, amountToPay);
             }
             repayDebtModal.classList.add('hidden');
             repayAmountInput.value = '';
@@ -415,7 +420,7 @@
             repayDebtModal.classList.add('hidden');
             repayAmountInput.value = '';
         });
-        
+
         // Initial setup
         window.onload = async () => {
             const app = initializeApp(firebaseConfig);
@@ -428,13 +433,13 @@
                     userIdDisplay.textContent = `معرف المستخدم: ${userId}`;
                     transactionsCollection = collection(db, `/artifacts/${appId}/users/${userId}/transactions`);
                     debtsCollection = collection(db, `/artifacts/${appId}/users/${userId}/debts`);
-                    
+
                     onSnapshot(transactionsCollection, (snapshot) => {
                         transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                         renderTransactions();
                         updateBalances();
                     });
-                    
+
                     onSnapshot(debtsCollection, (snapshot) => {
                         debts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                         renderDebts();
@@ -452,3 +457,4 @@
     </script>
 </body>
 </html>
+
