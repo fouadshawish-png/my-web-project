@@ -10,9 +10,11 @@
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6;
         }
+
         .hidden {
             display: none;
         }
+
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -25,12 +27,19 @@
             align-items: center;
             z-index: 100;
         }
+
         .animate-spin {
             animation: spin 1s linear infinite;
         }
+
         @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
         }
     </style>
 </head>
@@ -75,7 +84,7 @@
                 <label for="descriptionInput" class="block text-gray-700 font-semibold mb-2">الوصف</label>
                 <input type="text" id="descriptionInput" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="وصف الحركة">
             </div>
-            
+
             <div class="md:col-span-3 flex items-center gap-2">
                 <input type="checkbox" id="installmentCheckbox" class="form-checkbox h-5 w-5 text-blue-600 rounded-md">
                 <label for="installmentCheckbox" class="text-gray-700 font-semibold">هل هذه الحركة قسط؟</label>
@@ -145,7 +154,11 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, addDoc, getDocs, getDocFromCache, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Enable debug logging for Firestore
+        setLogLevel('debug');
 
         // Global variables provided by the Canvas environment
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -205,7 +218,7 @@
                 setTimeout(() => messageDiv.remove(), 300);
             }, 3000);
         }
-        
+
         // Render transactions to the table
         function renderTransactions() {
             transactionsTableBody.innerHTML = '';
@@ -214,23 +227,23 @@
                 const row = document.createElement('tr');
                 const isInstallment = transaction.installmentDetails && transaction.installmentDetails.remainingInstallments > 0;
                 let typeText = '';
-                if (transaction.type === 'purchase') {
+                if (isInstallment) {
+                    typeText = 'قسط';
+                } else if (transaction.type === 'purchase') {
                     typeText = 'شراء';
                 } else if (transaction.type === 'cashWithdrawal') {
                     typeText = 'سحب نقدي';
-                } else if (transaction.type === 'installment') {
-                    typeText = 'قسط';
                 }
 
                 row.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${typeText}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${transaction.type === 'cashWithdrawal' || transaction.type === 'purchase' ? 'text-red-600' : 'text-gray-900'}">${transaction.amount.toFixed(2)}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${transaction.description}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(transaction.timestamp).toLocaleDateString()}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button class="text-red-600 hover:text-red-900 delete-btn" data-id="${transaction.id}">حذف</button>
-                    </td>
-                `;
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${typeText}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${isInstallment || transaction.type === 'cashWithdrawal' || transaction.type === 'purchase' ? 'text-red-600' : 'text-gray-900'}">${transaction.amount.toFixed(2)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${transaction.description}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(transaction.timestamp).toLocaleDateString()}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button class="text-red-600 hover:text-red-900 delete-btn" data-id="${transaction.id}">حذف</button>
+                            </td>
+                        `;
                 transactionsTableBody.appendChild(row);
             });
             document.querySelectorAll('.delete-btn').forEach(button => {
@@ -246,7 +259,7 @@
                 });
             });
         }
-        
+
         // Handle form submissions
         async function handleTransactionFormSubmit(e) {
             e.preventDefault();
@@ -303,39 +316,39 @@
 
             try {
                 // Apply all current debts and installments to the new salary
-                const currentDebt = appState.currentDebt || 0;
-                const totalInstallments = appState.totalInstallments || 0;
+                const currentDebt = transactions
+                    .filter(t => !t.installmentDetails)
+                    .reduce((sum, t) => sum + t.amount, 0);
+
+                const totalInstallments = transactions
+                    .filter(t => t.installmentDetails)
+                    .reduce((sum, t) => sum + t.installmentDetails.installmentAmount, 0);
+
                 const newSalary = salaryAmount - currentDebt - totalInstallments;
-                
+
+                // Update appState with new salary
                 await setDoc(appStateDoc, {
                     salary: newSalary,
-                    currentDebt: 0,
-                    totalInstallments: 0,
                     lastSalaryDate: new Date().getTime(),
                 }, { merge: true });
 
-                // Reset installment transactions
-                transactions.forEach(async (t) => {
+                // Reset installment transactions and clear all non-installment transactions
+                const batch = writeBatch(db);
+
+                transactions.forEach(t => {
+                    const transactionRef = doc(db, transactionsCollection.path, t.id);
                     if (t.installmentDetails && t.installmentDetails.remainingInstallments > 0) {
                         const newRemaining = t.installmentDetails.remainingInstallments - 1;
                         if (newRemaining <= 0) {
-                            await deleteDoc(doc(db, transactionsCollection.path, t.id));
+                            batch.delete(transactionRef);
                         } else {
-                            await updateDoc(doc(db, transactionsCollection.path, t.id), {
-                                'installmentDetails.remainingInstallments': newRemaining,
-                            });
+                            batch.update(transactionRef, { 'installmentDetails.remainingInstallments': newRemaining });
                         }
-                    }
-                });
-
-                // Clear all non-installment transactions
-                const batch = db.batch();
-                transactions.forEach(transaction => {
-                    if (!transaction.installmentDetails) {
-                        const transactionRef = doc(db, transactionsCollection.path, transaction.id);
+                    } else {
                         batch.delete(transactionRef);
                     }
                 });
+
                 await batch.commit();
 
                 showMessage('تم تسجيل الراتب بنجاح!', 'success');
@@ -345,7 +358,7 @@
                 showMessage('حدث خطأ أثناء تسجيل الراتب. يرجى المحاولة مرة أخرى.', 'error');
             }
         }
-        
+
         function handleInstallmentCheckboxChange() {
             if (installmentCheckbox.checked) {
                 installmentDetailsDiv.classList.remove('hidden');
@@ -353,13 +366,13 @@
                 installmentDetailsDiv.classList.add('hidden');
             }
         }
-        
-        async function initializeApp() {
+
+        async function initAndAuthenticate() {
             try {
                 const unsubscribe = onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         userId = user.uid;
-                        userIdDisplay.innerText = `معرف المستخدم: ${userId}`;
+                        userIdDisplay.innerText = `مرحباً! معرف المستخدم: ${userId}`;
                         transactionsCollection = collection(db, `/artifacts/${appId}/users/${userId}/transactions`);
                         appStateDoc = doc(db, `/artifacts/${appId}/users/${userId}/appState/data`);
 
@@ -417,7 +430,7 @@
         }
 
         // Initialize on page load
-        initializeApp();
+        initAndAuthenticate();
     </script>
 </body>
 </html>
